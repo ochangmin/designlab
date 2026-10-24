@@ -27,7 +27,10 @@ export const App = (): ReactElement => {
     const saved = saveProject(design);
     if (saved.ok) rememberLastOpened(design.id);
     const store = new EditorStore(design);
-    if (!saved.ok) store.reportError(saved.error);
+    // The document is already in storage, so say so rather than showing
+    // "not saved" until the first autosave tick confirms what is already true.
+    if (saved.ok) store.markSaved();
+    else store.reportError(saved.error);
     storeRef.current = store;
     setOpen(true);
   };
