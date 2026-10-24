@@ -385,7 +385,9 @@ export const Inspector = (): ReactElement => {
   const primary = selected[0];
 
   return (
-    <aside className="inspector">
+    // Keyed by the selected element so the panels re-enter when they start
+    // describing something else; editing a property does not change the key.
+    <aside className="inspector" key={primary?.id ?? 'document'}>
       {!primary ? (
         <DocumentInspector />
       ) : (

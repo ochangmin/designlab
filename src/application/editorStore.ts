@@ -61,6 +61,12 @@ export interface EditorState {
   readonly selection: readonly ElementId[];
   readonly zoom: number;
   readonly pan: Point;
+  /**
+   * True only for view changes the person asked for as a single step — the
+   * zoom buttons, 1:1, fit — which the canvas eases. A wheel zoom or a pan
+   * drag must track the pointer exactly, so it stays false.
+   */
+  readonly viewAnimated: boolean;
   readonly editingTextId: ElementId | null;
   readonly guides: readonly SnapGuide[];
   readonly clipboard: readonly DesignElement[];
@@ -93,6 +99,7 @@ export class EditorStore {
       selection: [],
       zoom: 1,
       pan: { x: 0, y: 0 },
+      viewAnimated: false,
       editingTextId: null,
       guides: [],
       clipboard: [],
@@ -264,16 +271,21 @@ export class EditorStore {
 
   // ------------------------------------------------------------------- view
 
-  setZoom = (zoom: number): void => this.#set({ zoom: clamp(zoom, 0.05, 8) });
+  setZoom = (zoom: number): void => this.#set({ zoom: clamp(zoom, 0.05, 8), viewAnimated: true });
 
   zoomBy = (factor: number): void => this.setZoom(this.#state.zoom * factor);
 
-  setPan = (pan: Point): void => this.#set({ pan });
+  setPan = (pan: Point): void => this.#set({ pan, viewAnimated: false });
 
   panBy = (dx: number, dy: number): void =>
-    this.#set({ pan: { x: this.#state.pan.x + dx, y: this.#state.pan.y + dy } });
+    this.#set({ pan: { x: this.#state.pan.x + dx, y: this.#state.pan.y + dy }, viewAnimated: false });
 
-  resetView = (zoom: number): void => this.#set({ zoom, pan: { x: 0, y: 0 } });
+  /** Zoom and pan in one update, so a wheel gesture renders a single frame. */
+  setView = (zoom: number, pan: Point, options: { readonly animated: boolean }): void =>
+    this.#set({ zoom: clamp(zoom, 0.05, 8), pan, viewAnimated: options.animated });
+
+  resetView = (zoom: number): void =>
+    this.#set({ zoom: clamp(zoom, 0.05, 8), pan: { x: 0, y: 0 }, viewAnimated: true });
 
   setGuides = (guides: readonly SnapGuide[]): void => this.#set({ guides });
 

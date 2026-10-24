@@ -54,11 +54,14 @@ export const Editor = ({ onExit }: EditorProps): ReactElement => {
         <Inspector />
       </div>
       {state.notice !== null && (
-        <div className={`toast toast--${state.notice.tone}`} role="status">
+        // Keyed by notice so a second message replays the entrance and the
+        // timer bar, rather than inheriting the first one's remaining time.
+        <div key={state.notice.id} className={`toast toast--${state.notice.tone}`} role="status">
           <span>{state.notice.message}</span>
           <button type="button" onClick={() => store.dismissNotice()} aria-label="알림 닫기">
             ×
           </button>
+          <span className="toast__timer" aria-hidden="true" />
         </div>
       )}
     </div>

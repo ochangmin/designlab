@@ -35,7 +35,13 @@ export const TopBar = ({ onExit }: TopBarProps): ReactElement => {
           aria-label="디자인 이름"
           onChange={(event) => store.rename(event.target.value)}
         />
-        <span className="topbar__status">{savedLabel(state.dirty, state.savedAt)}</span>
+        <span className="topbar__status">
+          <span
+            className={`topbar__status-dot${state.dirty ? ' topbar__status-dot--pending' : ''}`}
+            aria-hidden="true"
+          />
+          {savedLabel(state.dirty, state.savedAt)}
+        </span>
       </div>
 
       <div className="topbar__centre">

@@ -1,0 +1,527 @@
+/* DesignLab — the motion system.
+ *
+ * One owner for how the interface moves: durations, easings, keyframes and the
+ * rules that use them. styles.css owns layout and colour and declares no
+ * animation of its own, so a timing change happens in exactly one place.
+ *
+ * Two rules hold everywhere:
+ *   1. Only `transform`, `opacity` and `filter` are animated, so motion stays
+ *      on the compositor and never competes with a drag on the canvas.
+ *   2. Nothing the pointer is currently driving is transitioned. A dragged
+ *      element, a live pan and a wheel zoom follow the cursor exactly; only
+ *      discrete view changes (the zoom buttons, fit, 1:1) are eased.
+ */
+
+:root {
+  --dur-instant: 90ms;
+  --dur-fast: 160ms;
+  --dur: 240ms;
+  --dur-slow: 420ms;
+  --dur-ambient: 24s;
+
+  /* Decelerating: things arriving on screen. */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  /* Slight overshoot: things the person just asked for. */
+  --ease-spring: cubic-bezier(0.34, 1.4, 0.64, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+
+  /* Multiplied into every stagger so reduced motion can collapse them all. */
+  --stagger-step: 34ms;
+}
+
+/* Honour the system setting: keep state changes legible, drop the travel.
+   Ambient loops stop outright — they are decoration, not feedback. */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --dur-instant: 1ms;
+    --dur-fast: 1ms;
+    --dur: 1ms;
+    --dur-slow: 1ms;
+    --stagger-step: 0ms;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .hero__blob,
+  .brand__mark::after,
+  .topbar__status-dot {
+    animation: none !important;
+  }
+
+  /* `*` does not reach these pseudo-elements, so name them. */
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation-duration: 1ms !important;
+  }
+}
+
+/* ---------------------------------------------------------------- keyframes */
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slide-in-left {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes pop-in {
+  0% {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes sheet-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 16px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+@keyframes toast-timer {
+  from {
+    transform: scaleX(1);
+  }
+  to {
+    transform: scaleX(0);
+  }
+}
+
+/* The selection ring settles onto what was just picked. */
+@keyframes ring-in {
+  from {
+    opacity: 0.4;
+    transform: scale(1.02);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes guide-in-x {
+  from {
+    opacity: 0;
+    transform: scaleY(0.4);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes guide-in-y {
+  from {
+    opacity: 0;
+    transform: scaleX(0.4);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes canvas-in {
+  from {
+    opacity: 0;
+    transform: scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes sheen {
+  from {
+    transform: translateX(-130%) skewX(-18deg);
+  }
+  to {
+    transform: translateX(240%) skewX(-18deg);
+  }
+}
+
+@keyframes drift {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  33% {
+    transform: translate3d(5%, -7%, 0) scale(1.08);
+  }
+  66% {
+    transform: translate3d(-4%, 5%, 0) scale(0.95);
+  }
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@keyframes hue-turn {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes breathe {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: scale(0.82);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* ------------------------------------------------------------- app surfaces */
+
+/* A cross-fade between the dashboard and the editor where the browser supports
+   it; elsewhere the two surfaces simply animate in on their own. */
+::view-transition-old(root) {
+  animation: fade-in var(--dur) var(--ease-in-out) reverse;
+}
+
+::view-transition-new(root) {
+  animation: fade-in var(--dur-slow) var(--ease-out);
+}
+
+.dashboard {
+  animation: fade-in var(--dur-slow) var(--ease-out) both;
+}
+
+.editor {
+  animation: fade-in var(--dur) var(--ease-out) both;
+}
+
+/* `--i` is the item's index; one declaration staggers any list. */
+.stagger-item {
+  animation: rise var(--dur-slow) var(--ease-out) both;
+  animation-delay: calc(var(--i, 0) * var(--stagger-step));
+}
+
+/* ------------------------------------------------------------------- hero */
+
+.hero__blob {
+  animation: drift var(--dur-ambient) var(--ease-in-out) infinite;
+  will-change: transform;
+}
+
+.hero__blob:nth-child(2) {
+  animation-duration: calc(var(--dur-ambient) * 1.4);
+  animation-direction: reverse;
+}
+
+.hero__blob:nth-child(3) {
+  animation-duration: calc(var(--dur-ambient) * 1.75);
+  animation-delay: -6s;
+}
+
+.brand__mark::after {
+  animation: hue-turn calc(var(--dur-ambient) * 0.75) linear infinite;
+}
+
+/* ----------------------------------------------------------------- controls */
+
+.button,
+.chip,
+.size-row,
+.text-style,
+.shape-tile,
+.icon-tile,
+.gradient-tile,
+.template-tile,
+.swatch,
+.align-grid button,
+.segmented button,
+.layer-row__main,
+.project-row__open,
+.upload-drop,
+.page-chip__thumb {
+  transition:
+    background-color var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out),
+    color var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur-fast) var(--ease-out),
+    transform var(--dur-fast) var(--ease-spring);
+}
+
+.button:active:not(:disabled),
+.shape-tile:active,
+.icon-tile:active,
+.gradient-tile:active,
+.template-tile:active {
+  transform: scale(0.97);
+}
+
+.shape-tile:hover,
+.icon-tile:hover,
+.gradient-tile:hover {
+  transform: translateY(-2px);
+}
+
+.text-style:hover,
+.size-row:hover,
+.project-row__open:hover {
+  transform: translateX(3px);
+}
+
+.layer-row__main:hover {
+  transform: translateX(2px);
+}
+
+.swatch:hover {
+  transform: scale(1.14);
+}
+
+/* ------------------------------------------------------------------- cards */
+
+.size-card,
+.template-card {
+  transition:
+    transform var(--dur) var(--ease-spring),
+    box-shadow var(--dur) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out);
+}
+
+.size-card:not(.size-card--custom):hover,
+.template-card:hover {
+  transform: translateY(-4px);
+}
+
+/* A single highlight passes over the card on hover. The sweep lives on a
+   pseudo-element so no layout or paint property is animated. */
+.size-card::after,
+.template-card::after {
+  animation-play-state: paused;
+}
+
+.size-card:not(.size-card--custom):hover::after,
+.template-card:hover::after {
+  animation: sheen 760ms var(--ease-in-out);
+}
+
+.template-card__canvas .page-preview {
+  transition: transform var(--dur-slow) var(--ease-spring);
+}
+
+.template-card:hover .page-preview {
+  transform: scale(1.05);
+}
+
+.template-card__hint {
+  transition:
+    opacity var(--dur) var(--ease-out),
+    transform var(--dur) var(--ease-spring);
+}
+
+.template-card:hover .template-card__hint,
+.template-card:focus-visible .template-card__hint {
+  opacity: 1;
+  transform: none;
+}
+
+/* -------------------------------------------------------------- left rail */
+
+/* The pill tracks the active tab instead of each tab repainting its own
+   background, so the selection reads as one object moving. */
+.rail__indicator {
+  transition: transform var(--dur) var(--ease-spring);
+  transform: translateY(calc(var(--active-tab, 0) * var(--rail-tab-height)));
+}
+
+.left-rail--collapsed .rail__indicator {
+  opacity: 0;
+  transition: opacity var(--dur-fast) var(--ease-out);
+}
+
+.rail__tab {
+  transition:
+    color var(--dur-fast) var(--ease-out),
+    transform var(--dur-fast) var(--ease-spring);
+}
+
+.rail__tab:active {
+  transform: scale(0.94);
+}
+
+.rail-panel {
+  animation: slide-in-left var(--dur) var(--ease-out) both;
+  overflow: hidden;
+}
+
+.rail-panel__body > * {
+  animation: fade-in var(--dur-slow) var(--ease-out) both;
+}
+
+/* --------------------------------------------------------------- inspector */
+
+/* The inspector is keyed by what is selected, so these replay whenever the
+   properties start describing a different element. */
+.inspector > .panel-section {
+  animation: rise var(--dur) var(--ease-out) both;
+}
+
+.inspector > .panel-section:nth-child(2) {
+  animation-delay: var(--stagger-step);
+}
+
+.inspector > .panel-section:nth-child(3) {
+  animation-delay: calc(var(--stagger-step) * 2);
+}
+
+.inspector > .panel-section:nth-child(4) {
+  animation-delay: calc(var(--stagger-step) * 3);
+}
+
+.inspector > .panel-section:nth-child(n + 5) {
+  animation-delay: calc(var(--stagger-step) * 4);
+}
+
+.slider input[type='range'],
+.input,
+.select,
+.number-field input {
+  transition:
+    border-color var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur-fast) var(--ease-out);
+}
+
+/* ------------------------------------------------------------------ canvas */
+
+.page-surface {
+  animation: canvas-in var(--dur-slow) var(--ease-out) both;
+}
+
+/* Only a discrete view change is eased; a wheel zoom or a pan must not lag. */
+.workspace__stage--eased {
+  transition: transform var(--dur) var(--ease-out);
+}
+
+.hit {
+  transition: box-shadow var(--dur-instant) var(--ease-out);
+}
+
+.selection {
+  animation: ring-in var(--dur-fast) var(--ease-out) both;
+}
+
+.handle {
+  transition: transform var(--dur-fast) var(--ease-spring);
+}
+
+.handle:hover {
+  transform: translate(-50%, -50%) scale(1.35);
+}
+
+.guide--x {
+  animation: guide-in-x var(--dur-instant) var(--ease-out) both;
+  transform-origin: center;
+}
+
+.guide--y {
+  animation: guide-in-y var(--dur-instant) var(--ease-out) both;
+  transform-origin: center;
+}
+
+.marquee {
+  animation: fade-in var(--dur-instant) var(--ease-out) both;
+}
+
+.workspace__hint {
+  transition:
+    opacity var(--dur) var(--ease-out),
+    transform var(--dur) var(--ease-out);
+}
+
+.workspace--drop::after {
+  animation: pop-in var(--dur-fast) var(--ease-spring) both;
+}
+
+/* ------------------------------------------------------------ pages strip */
+
+.page-chip__thumb:hover {
+  transform: translateY(-3px);
+}
+
+.page-chip.is-active .page-chip__thumb {
+  transform: translateY(-2px);
+}
+
+/* --------------------------------------------------------- sheet and toast */
+
+.sheet-backdrop {
+  animation: fade-in var(--dur-fast) var(--ease-out) both;
+}
+
+.sheet {
+  animation: sheet-in var(--dur) var(--ease-spring) both;
+}
+
+.toast {
+  animation: toast-in var(--dur) var(--ease-spring) both;
+}
+
+/* Runs for exactly as long as the toast is on screen. */
+.toast__timer {
+  animation: toast-timer 4200ms linear both;
+  transform-origin: left center;
+}
+
+/* The dot pulses only while there are unsaved changes. */
+.topbar__status-dot--pending {
+  animation: breathe 1.5s var(--ease-in-out) infinite;
+}

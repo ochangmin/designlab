@@ -2,6 +2,7 @@
 
 import { useState, type ReactElement } from 'react';
 
+import { cssVars } from '../cssVars.js';
 import { BackgroundPanel } from './panels/BackgroundPanel.js';
 import { ElementsPanel } from './panels/ElementsPanel.js';
 import { LayersPanel } from './panels/LayersPanel.js';
@@ -50,6 +51,12 @@ export const LeftRail = (): ReactElement => {
   return (
     <div className={`left-rail${collapsed ? ' left-rail--collapsed' : ''}`}>
       <nav className="rail" aria-label="도구">
+        {/* The pill is positioned from the active index; motion.css slides it. */}
+        <span
+          className="rail__indicator"
+          aria-hidden="true"
+          style={cssVars({ '--active-tab': TABS.findIndex((tab) => tab.id === active) })}
+        />
         {TABS.map((tab) => (
           <button
             key={tab.id}
@@ -80,7 +87,10 @@ export const LeftRail = (): ReactElement => {
               ‹
             </button>
           </header>
-          <div className="rail-panel__body">{panelFor(active)}</div>
+          {/* Keyed by tab so switching panels replays the slide-in. */}
+          <div key={active} className="rail-panel__body">
+            {panelFor(active)}
+          </div>
         </div>
       )}
     </div>

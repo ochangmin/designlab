@@ -411,11 +411,15 @@ export const Workspace = (): ReactElement => {
       const offsetX = event.clientX - stageRect.left;
       const offsetY = event.clientY - stageRect.top;
       const ratio = nextZoom / zoom;
-      store.setZoom(nextZoom);
-      store.setPan({
-        x: pan.x + offsetX * (1 - ratio) + (design.width * (nextZoom - zoom)) / 2,
-        y: pan.y + offsetY * (1 - ratio) + (design.height * (nextZoom - zoom)) / 2,
-      });
+      store.setView(
+        nextZoom,
+        {
+          x: pan.x + offsetX * (1 - ratio) + (design.width * (nextZoom - zoom)) / 2,
+          y: pan.y + offsetY * (1 - ratio) + (design.height * (nextZoom - zoom)) / 2,
+        },
+        // A wheel zoom follows the cursor frame by frame; easing it would lag.
+        { animated: false },
+      );
       return;
     }
     store.panBy(-event.deltaX, -event.deltaY);
@@ -471,7 +475,7 @@ export const Workspace = (): ReactElement => {
       }}
     >
       <div
-        className="workspace__stage"
+        className={`workspace__stage${state.viewAnimated ? ' workspace__stage--eased' : ''}`}
         ref={stageRef}
         style={{
           width: `${design.width}px`,
@@ -481,7 +485,8 @@ export const Workspace = (): ReactElement => {
           transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom}) translate(-50%, -50%)`,
         }}
       >
-        <div className="page-surface" style={{ background: paintToCss(page.background) }} />
+        {/* Keyed by page so switching pages replays the reveal. */}
+        <div key={page.id} className="page-surface" style={{ background: paintToCss(page.background) }} />
 
         <div className="layer layer--content">
           {page.elements.map((element) => (
@@ -556,6 +561,8 @@ export const Workspace = (): ReactElement => {
 
         {frame && editing === null && (
           <div
+            // Keyed by what is selected, so the ring settles onto each new pick.
+            key={selection.join(',')}
             className="selection"
             style={{
               left: `${singleSelected ? singleSelected.x : frame.x}px`,

@@ -15,6 +15,7 @@ import { createCanvasMeasure } from '../domain/textLayout.js';
 import { Dashboard } from './Dashboard.js';
 import { Editor } from './editor/Editor.js';
 import { MeasureContext, StoreContext } from './storeContext.js';
+import { startViewTransition } from './viewTransition.js';
 
 export const App = (): ReactElement => {
   const measure = useMemo(() => createCanvasMeasure(), []);
@@ -32,7 +33,14 @@ export const App = (): ReactElement => {
     if (saved.ok) store.markSaved();
     else store.reportError(saved.error);
     storeRef.current = store;
-    setOpen(true);
+    startViewTransition(() => setOpen(true));
+  };
+
+  const exitToDashboard = (): void => {
+    startViewTransition(() => {
+      setOpen(false);
+      storeRef.current = null;
+    });
   };
 
   const store = storeRef.current;
@@ -41,12 +49,7 @@ export const App = (): ReactElement => {
     <MeasureContext.Provider value={measure}>
       {open && store ? (
         <StoreContext.Provider value={store}>
-          <Editor
-            onExit={() => {
-              setOpen(false);
-              storeRef.current = null;
-            }}
-          />
+          <Editor onExit={exitToDashboard} />
         </StoreContext.Provider>
       ) : (
         <Dashboard measure={measure} onOpen={openDesign} />

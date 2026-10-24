@@ -1,20 +1,23 @@
 /**
  * The project home.
  *
- * Starting points (sizes and templates) and the person's saved projects live
- * side by side, because both answer the same question: what am I opening?
+ * Three questions in order: what is this, what do I start from, and what did I
+ * already make. Starting points and saved projects live on the same surface
+ * because both answer "what am I opening?".
  */
 
-import { useMemo, useState, type ReactElement } from 'react';
+import { useMemo, useRef, useState, type ReactElement } from 'react';
 
-import { createBlankDesign } from '../domain/templates.js';
+import { deleteProject, listProjects, loadProject, type ProjectSummary } from '../application/projectRepository.js';
+import { SHAPE_LABELS } from '../domain/elements.js';
 import { describeError } from '../domain/errors.js';
-import { SIZE_PRESETS } from '../domain/presets.js';
-import { TEMPLATES } from '../domain/templates.js';
+import { ICONS } from '../domain/icons.js';
+import { parseDesignJson } from '../domain/parse.js';
+import { FONTS, SIZE_PRESETS } from '../domain/presets.js';
+import { createBlankDesign, TEMPLATES } from '../domain/templates.js';
 import type { Design } from '../domain/document.js';
 import type { MeasureText } from '../domain/textLayout.js';
-import { deleteProject, listProjects, loadProject, type ProjectSummary } from '../application/projectRepository.js';
-import { parseDesignJson } from '../domain/parse.js';
+import { cssVars } from './cssVars.js';
 import { PagePreview } from './PagePreview.js';
 
 const relativeTime = (timestamp: number): string => {
@@ -28,6 +31,15 @@ const relativeTime = (timestamp: number): string => {
   return new Date(timestamp).toLocaleDateString('ko-KR');
 };
 
+// Counted from the real catalogues, so the numbers cannot drift from what the
+// editor actually offers.
+const CAPABILITIES: readonly { readonly label: string; readonly value: number }[] = [
+  { label: '템플릿', value: TEMPLATES.length },
+  { label: '도형', value: Object.keys(SHAPE_LABELS).length },
+  { label: '아이콘', value: ICONS.length },
+  { label: '글꼴', value: FONTS.length },
+];
+
 export interface DashboardProps {
   readonly measure: MeasureText;
   readonly onOpen: (design: Design) => void;
@@ -38,6 +50,7 @@ export const Dashboard = ({ measure, onOpen }: DashboardProps): ReactElement => 
   const [message, setMessage] = useState<string | null>(null);
   const [customWidth, setCustomWidth] = useState(1080);
   const [customHeight, setCustomHeight] = useState(1080);
+  const templatesRef = useRef<HTMLElement | null>(null);
 
   // One read of the repository per refresh: the list and the storage notice are
   // two views of the same outcome, not two lookups.
@@ -82,27 +95,30 @@ export const Dashboard = ({ measure, onOpen }: DashboardProps): ReactElement => 
 
   return (
     <div className="dashboard">
-      <header className="dashboard__head">
+      <header className="topnav">
         <div className="brand">
           <span className="brand__mark" aria-hidden="true" />
           <div>
-            <h1>DesignLab</h1>
+            {/* The page's one <h1> belongs to the hero, not the wordmark. */}
+            <span className="brand__name">DesignLab</span>
             <p>브라우저에서 바로 만드는 디자인 플랫폼</p>
           </div>
         </div>
-        <label className="button button--ghost">
-          디자인 파일 열기
-          <input
-            type="file"
-            accept="application/json,.json"
-            hidden
-            onChange={(event) => {
-              const file = event.target.files?.[0];
-              if (file) void importFile(file);
-              event.target.value = '';
-            }}
-          />
-        </label>
+        <div className="topnav__actions">
+          <label className="button button--ghost">
+            디자인 파일 열기
+            <input
+              type="file"
+              accept="application/json,.json"
+              hidden
+              onChange={(event) => {
+                const file = event.target.files?.[0];
+                if (file) void importFile(file);
+                event.target.value = '';
+              }}
+            />
+          </label>
+        </div>
       </header>
 
       {message !== null && (
@@ -116,14 +132,61 @@ export const Dashboard = ({ measure, onOpen }: DashboardProps): ReactElement => 
         </p>
       )}
 
+      <section className="hero">
+        <div className="hero__bg" aria-hidden="true">
+          <span className="hero__blob hero__blob--a" />
+          <span className="hero__blob hero__blob--b" />
+          <span className="hero__blob hero__blob--c" />
+        </div>
+        <div className="hero__content">
+          <p className="hero__eyebrow">설치 없이, 브라우저에서</p>
+          <h1>생각한 그대로를
+            <br />
+            바로 디자인으로
+          </h1>
+          <p className="hero__lead">
+            템플릿에서 시작하거나 빈 캔버스를 열어 보세요. 작업은 자동으로 저장되고, 화면에 보이는
+            그대로 PNG·SVG·PDF로 내보냅니다.
+          </p>
+          <div className="hero__actions">
+            <button
+              type="button"
+              className="button button--primary"
+              onClick={() => onOpen(createBlankDesign('제목 없는 디자인', 1080, 1080))}
+            >
+              빈 캔버스로 시작
+            </button>
+            <button
+              type="button"
+              className="button"
+              onClick={() => templatesRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+            >
+              템플릿 둘러보기
+            </button>
+          </div>
+          <dl className="hero__stats">
+            {CAPABILITIES.map((capability) => (
+              <div key={capability.label} className="hero__stat">
+                <dt>{capability.label}</dt>
+                <dd>{capability.value}</dd>
+              </div>
+            ))}
+          </dl>
+        </div>
+      </section>
+
       <section className="dashboard__section">
-        <h2>새로 만들기</h2>
+        <div className="dashboard__head">
+          <h2>새로 만들기</h2>
+          <span className="dashboard__count">{SIZE_PRESETS.length}가지 크기</span>
+        </div>
         <div className="size-grid">
-          {SIZE_PRESETS.map((preset) => (
+          {SIZE_PRESETS.map((preset, index) => (
             <button
               key={preset.id}
               type="button"
-              className="size-card"
+              className="size-card stagger-item"
+              style={cssVars({ '--i': index })}
               onClick={() => onOpen(createBlankDesign(preset.label, preset.width, preset.height))}
             >
               <span
@@ -138,7 +201,10 @@ export const Dashboard = ({ measure, onOpen }: DashboardProps): ReactElement => 
               <small>{preset.hint}</small>
             </button>
           ))}
-          <div className="size-card size-card--custom">
+          <div
+            className="size-card size-card--custom stagger-item"
+            style={cssVars({ '--i': SIZE_PRESETS.length })}
+          >
             <strong>직접 입력</strong>
             <div className="size-card__inputs">
               <input
@@ -178,16 +244,20 @@ export const Dashboard = ({ measure, onOpen }: DashboardProps): ReactElement => 
         </div>
       </section>
 
-      <section className="dashboard__section">
-        <h2>템플릿</h2>
+      <section className="dashboard__section" ref={templatesRef}>
+        <div className="dashboard__head">
+          <h2>템플릿</h2>
+          <span className="dashboard__count">{TEMPLATES.length}개</span>
+        </div>
         <div className="template-grid">
-          {templatePreviews.map(({ template, design }) => {
+          {templatePreviews.map(({ template, design }, index) => {
             const firstPage = design.pages[0];
             return (
               <button
                 key={template.id}
                 type="button"
-                className="template-card"
+                className="template-card stagger-item"
+                style={cssVars({ '--i': index })}
                 onClick={() => onOpen(template.build())}
               >
                 <div className="template-card__canvas">
@@ -201,6 +271,7 @@ export const Dashboard = ({ measure, onOpen }: DashboardProps): ReactElement => 
                       width={Math.min(240, (196 * design.width) / design.height)}
                     />
                   )}
+                  <span className="template-card__hint">이 템플릿으로 시작</span>
                 </div>
                 <div className="template-card__meta">
                   <strong>{template.label}</strong>
@@ -213,13 +284,16 @@ export const Dashboard = ({ measure, onOpen }: DashboardProps): ReactElement => 
       </section>
 
       <section className="dashboard__section">
-        <h2>내 디자인</h2>
+        <div className="dashboard__head">
+          <h2>내 디자인</h2>
+          <span className="dashboard__count">{projects.length === 0 ? '없음' : `${projects.length}개`}</span>
+        </div>
         {projects.length === 0 ? (
           <p className="empty">아직 저장된 디자인이 없습니다. 위에서 템플릿이나 크기를 선택해 시작해 보세요.</p>
         ) : (
           <ul className="project-list">
-            {projects.map((summary) => (
-              <li key={summary.id} className="project-row">
+            {projects.map((summary, index) => (
+              <li key={summary.id} className="project-row stagger-item" style={cssVars({ '--i': index })}>
                 <button type="button" className="project-row__open" onClick={() => openProject(summary.id)}>
                   <span className="project-row__name">{summary.name}</span>
                   <span className="project-row__meta">
