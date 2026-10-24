@@ -74,6 +74,27 @@ src/ui/           React 어댑터 — 대시보드, 에디터 셸, 패널, 캔�
 tests/            도메인 단위 테스트 (vitest)
 ```
 
+## 배포
+
+두 곳에 떠 있고, 갱신 방식이 다릅니다.
+
+| 대상 | 주소 | 갱신 |
+| --- | --- | --- |
+| GitHub Pages | <https://ochangmin.github.io/designlab/> | `main`에 푸시하면 자동 (타입 검사·테스트 통과 시) |
+| Vercel | <https://designlab-gold.vercel.app> | 아래 명령으로 수동 |
+
+```bash
+npx vercel deploy --prod
+```
+
+Pages를 자동 배포 경로로 쓰고 Vercel은 필요할 때만 올리기로 했습니다. Vercel 프로젝트는
+GitHub 저장소에 연결되어 있지 않으므로 푸시로는 갱신되지 않습니다 — 연결하려면 저장소에
+쓰기 권한이 있는 GitHub 계정으로 Vercel 프로젝트의 Settings → Git에서 직접 연결해야
+합니다. 빌드 설정은 [vercel.json](vercel.json)에 있고, 업로드 제외 목록은
+[.vercelignore](.vercelignore)에 있습니다.
+
+커스텀 도메인은 두 대상 중 한 곳에만 연결할 수 있습니다.
+
 ## 설계상 알아둘 점
 
 - **저장은 브라우저 로컬입니다.** `localStorage`에 프로젝트가 저장되며 서버나 계정은
