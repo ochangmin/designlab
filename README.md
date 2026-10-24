@@ -3,6 +3,9 @@
 브라우저에서 동작하는 비주얼 디자인 플랫폼입니다. 다중 페이지 문서, 벡터 요소 모델,
 템플릿, 그리고 화면과 동일한 결과를 내는 내보내기를 갖추고 있습니다.
 
+**데모: <https://ochangmin.github.io/designlab/>** — `main`에 푸시하면
+[GitHub Actions](.github/workflows/pages.yml)가 타입 검사·테스트·빌드를 거쳐 배포합니다.
+
 ```bash
 npm install
 npm run dev        # http://localhost:5173
