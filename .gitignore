@@ -3,8 +3,9 @@ dist/
 *.local
 .DS_Store
 
-# Vercel's local project link.
+# Vercel's local project link, and the OIDC token it writes alongside it.
 .vercel
+.env*
 
 # The REA repository that was studied for this project's architecture. It is a
 # separate upstream project (morluto/rea) and is not redistributed from here.

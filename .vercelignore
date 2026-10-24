@@ -1,0 +1,8 @@
+# Vercel builds from source, so only the project's own files need to travel.
+node_modules
+dist
+.git
+
+# The REA repository studied for this project's architecture: 2,500 files that
+# the build never reads.
+_source
