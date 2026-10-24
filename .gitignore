@@ -1,0 +1,11 @@
+node_modules/
+dist/
+*.local
+.DS_Store
+
+# Vercel's local project link.
+.vercel
+
+# The REA repository that was studied for this project's architecture. It is a
+# separate upstream project (morluto/rea) and is not redistributed from here.
+_source/
