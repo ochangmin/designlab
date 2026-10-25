@@ -5,39 +5,58 @@
  * Apache-2.0 or MIT) compiled to wasm32 and served beside the app. It is
  * optional on purpose: CI builds it as a separate, non-blocking job, and a
  * local checkout has no Rust toolchain, so every caller must be able to carry
- * on without it. `load()` therefore reports its absence as an ordinary
- * `Result` rather than throwing, and the built-in writer stays as the fallback.
+ * on without it. `loadCraftEngine` reports its absence as an ordinary `Result`
+ * rather than throwing, and the built-in writer stays as the fallback.
  *
- * Nothing above this module knows it is WebAssembly, or that the document
- * model on the other side is DeckCraft's rather than ours.
+ * Nothing above this module knows it is WebAssembly, or that the document model
+ * on the other side is DeckCraft's rather than ours.
  */
 
 import type { EngineUnavailable, StudioError } from '../../domain/errors.js';
 import { err, ok, type Result } from '../../domain/result.js';
 
-/** The shape wasm-bindgen generates for the bridge crate. */
+/** The bridge contract this build of the app was written against. */
+const REQUIRED_MAJOR = 0;
+const REQUIRED_MINOR = 2;
+
+/** An opened package, held on the Rust side so its media stays reachable. */
+interface BridgeDocument {
+  model_json: () => string;
+  warnings_json: () => string;
+  media_count: () => number;
+  media_bytes: (index: number) => Uint8Array | undefined;
+  free: () => void;
+}
+
 interface BridgeModule {
   readonly default: (input?: unknown) => Promise<unknown>;
   readonly bridge_version: () => string;
   readonly pptx_sniff: (bytes: Uint8Array) => boolean;
   readonly pptx_is_encrypted: (bytes: Uint8Array) => boolean;
-  readonly pptx_import_json: (bytes: Uint8Array) => string;
+  readonly PptxDocument: { open: (bytes: Uint8Array) => BridgeDocument };
   readonly pptx_export: (presentationJson: string) => Uint8Array;
 }
 
-export interface PptxImport {
-  /** A DeckCraft `Presentation`, exactly as the engine serialised it. */
-  readonly presentation: unknown;
+/**
+ * An opened `.pptx`. The caller must `release()` it: the package stays in
+ * WebAssembly memory until it does.
+ */
+export interface PptxDocument {
+  /** DeckCraft's `Presentation`, already parsed. */
+  readonly model: unknown;
   /** Parts the reader understood only partially; shown, never swallowed. */
   readonly warnings: readonly string[];
+  readonly mediaCount: number;
+  /** Bytes of one media item by its index in the model's `media` array. */
+  readonly mediaBytes: (index: number) => Uint8Array | null;
+  readonly release: () => void;
 }
 
 export interface CraftEngine {
   readonly version: string;
-  /** Whether the bytes look like a PresentationML package at all. */
   readonly sniffPptx: (bytes: Uint8Array) => boolean;
   readonly isPptxEncrypted: (bytes: Uint8Array) => boolean;
-  readonly importPptx: (bytes: Uint8Array) => Result<PptxImport, StudioError>;
+  readonly openPptx: (bytes: Uint8Array) => Result<PptxDocument, StudioError>;
   readonly exportPptx: (presentationJson: string) => Result<Uint8Array, StudioError>;
 }
 
@@ -49,21 +68,14 @@ const unavailable = (detail: string): EngineUnavailable => ({ kind: 'engine-unav
 const messageOf = (cause: unknown): string =>
   cause instanceof Error ? cause.message : typeof cause === 'string' ? cause : '알 수 없는 오류';
 
-const parseEnvelope = (json: string): Result<PptxImport, StudioError> => {
-  let value: unknown;
+const readWarnings = (document_: BridgeDocument): readonly string[] => {
   try {
-    value = JSON.parse(json);
-  } catch (cause) {
-    return err({ kind: 'import-failed', format: 'PPTX', detail: messageOf(cause) });
+    const parsed: unknown = JSON.parse(document_.warnings_json());
+    return Array.isArray(parsed) ? parsed.filter((entry): entry is string => typeof entry === 'string') : [];
+  } catch {
+    // Warnings are commentary; losing them must not fail the import itself.
+    return [];
   }
-  if (typeof value !== 'object' || value === null) {
-    return err({ kind: 'import-failed', format: 'PPTX', detail: '엔진이 예상과 다른 형식을 돌려주었습니다.' });
-  }
-  const record = value as Record<string, unknown>;
-  const warnings = Array.isArray(record['warnings'])
-    ? record['warnings'].filter((entry): entry is string => typeof entry === 'string')
-    : [];
-  return ok({ presentation: record['presentation'], warnings });
 };
 
 const wrap = (module: BridgeModule): CraftEngine => ({
@@ -73,14 +85,31 @@ const wrap = (module: BridgeModule): CraftEngine => ({
 
   isPptxEncrypted: (bytes) => module.pptx_is_encrypted(bytes),
 
-  importPptx: (bytes) => {
-    // The bridge throws a JS error for an unreadable package; that is a normal
-    // outcome for a file someone chose, so it becomes a Result here.
+  openPptx: (bytes) => {
+    // An unreadable package is a normal outcome for a file someone chose, so
+    // the bridge's thrown error becomes a Result here.
+    let handle: BridgeDocument;
     try {
-      return parseEnvelope(module.pptx_import_json(bytes));
+      handle = module.PptxDocument.open(bytes);
     } catch (cause) {
       return err({ kind: 'import-failed', format: 'PPTX', detail: messageOf(cause) });
     }
+
+    let model: unknown;
+    try {
+      model = JSON.parse(handle.model_json());
+    } catch (cause) {
+      handle.free();
+      return err({ kind: 'import-failed', format: 'PPTX', detail: messageOf(cause) });
+    }
+
+    return ok({
+      model,
+      warnings: readWarnings(handle),
+      mediaCount: handle.media_count(),
+      mediaBytes: (index) => handle.media_bytes(index) ?? null,
+      release: () => handle.free(),
+    });
   },
 
   exportPptx: (presentationJson) => {
@@ -91,6 +120,14 @@ const wrap = (module: BridgeModule): CraftEngine => ({
     }
   },
 });
+
+const supportsContract = (version: string): boolean => {
+  const [major, minor] = version.split('.').map((part) => Number.parseInt(part, 10));
+  if (major === undefined || minor === undefined || Number.isNaN(major) || Number.isNaN(minor)) {
+    return false;
+  }
+  return major === REQUIRED_MAJOR && minor >= REQUIRED_MINOR;
+};
 
 let pending: Promise<Result<CraftEngine, StudioError>> | null = null;
 
@@ -116,12 +153,18 @@ const start = async (): Promise<Result<CraftEngine, StudioError>> => {
     return err(unavailable(`초기화 실패: ${messageOf(cause)}`));
   }
 
+  const version = module.bridge_version();
+  if (!supportsContract(version)) {
+    // Refuse a mismatch outright rather than failing later on a changed shape.
+    return err(unavailable(`엔진 버전 ${version}은(는) 이 빌드와 맞지 않습니다.`));
+  }
+
   return ok(wrap(module));
 };
 
 /**
  * Load the engine once per page. The promise is cached including its failure,
- * so a build without an engine is not re-fetched on every export.
+ * so a build without an engine is not re-fetched on every import.
  */
 export const loadCraftEngine = (): Promise<Result<CraftEngine, StudioError>> => {
   pending ??= start();

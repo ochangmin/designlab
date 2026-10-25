@@ -14,7 +14,9 @@ import { useProjectStore } from './authContext.js';
 import { SHAPE_LABELS } from '../domain/elements.js';
 import { describeError } from '../domain/errors.js';
 import { ICONS } from '../domain/icons.js';
+import { openPptxFile } from '../application/format/openPptx.js';
 import { parseDesignJson } from '../domain/parse.js';
+import type { PptxImportOutcome } from '../domain/pptxImport.js';
 import { FONTS, SIZE_PRESETS } from '../domain/presets.js';
 import { createBlankDesign, TEMPLATES } from '../domain/templates.js';
 import type { Design } from '../domain/document.js';
@@ -59,6 +61,7 @@ export const Dashboard = ({ measure, onOpen, onOpenAuth, onOpenMembers }: Dashbo
   const projectStore = useProjectStore();
   const [refreshToken, setRefreshToken] = useState(0);
   const [message, setMessage] = useState<string | null>(null);
+  const [pendingImport, setPendingImport] = useState<PptxImportOutcome | null>(null);
   const [customWidth, setCustomWidth] = useState(1080);
   const [customHeight, setCustomHeight] = useState(1080);
   const templatesRef = useRef<HTMLElement | null>(null);
@@ -108,6 +111,26 @@ export const Dashboard = ({ measure, onOpen, onOpenAuth, onOpenMembers }: Dashbo
   };
 
   const importFile = async (file: File): Promise<void> => {
+    setMessage(null);
+    setPendingImport(null);
+
+    if (/\.pptx?$/i.test(file.name)) {
+      const opened = await openPptxFile(file);
+      if (!opened.ok) {
+        setMessage(describeError(opened.error));
+        return;
+      }
+      // A PowerPoint file can hold things this editor has no equivalent for.
+      // Say what will not survive before committing to the conversion, rather
+      // than opening a document that quietly lost part of itself.
+      if (opened.value.notes.length > 0) {
+        setPendingImport(opened.value);
+        return;
+      }
+      onOpen(opened.value.design);
+      return;
+    }
+
     const text = await file.text();
     const parsed = parseDesignJson(text);
     if (!parsed.ok) {
@@ -133,7 +156,7 @@ export const Dashboard = ({ measure, onOpen, onOpenAuth, onOpenMembers }: Dashbo
             디자인 파일 열기
             <input
               type="file"
-              accept="application/json,.json"
+              accept="application/json,.json,.pptx,application/vnd.openxmlformats-officedocument.presentationml.presentation"
               hidden
               onChange={(event) => {
                 const file = event.target.files?.[0];
@@ -155,6 +178,35 @@ export const Dashboard = ({ measure, onOpen, onOpenAuth, onOpenMembers }: Dashbo
         <p className="banner" role="status">
           {storageNotice}
         </p>
+      )}
+      {pendingImport !== null && (
+        <div className="banner import-notice" role="status">
+          <strong>
+            슬라이드 {pendingImport.design.pages.length}장을 읽었습니다. 다음은 이 편집기에서 그대로
+            재현되지 않습니다.
+          </strong>
+          <ul>
+            {pendingImport.notes.map((note) => (
+              <li key={note}>{note}</li>
+            ))}
+          </ul>
+          <div className="button-row">
+            <button
+              type="button"
+              className="button button--primary"
+              onClick={() => {
+                const outcome = pendingImport;
+                setPendingImport(null);
+                onOpen(outcome.design);
+              }}
+            >
+              그대로 열기
+            </button>
+            <button type="button" className="button" onClick={() => setPendingImport(null)}>
+              취소
+            </button>
+          </div>
+        </div>
       )}
 
       <section className="hero">

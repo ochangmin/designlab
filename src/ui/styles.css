@@ -335,6 +335,25 @@ h3 {
   color: #a32020;
 }
 
+/* What a converted file will lose, listed before the document is opened. */
+.import-notice {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 16px 18px;
+  line-height: 1.6;
+}
+
+.import-notice ul {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.import-notice .button-row {
+  width: auto;
+}
+
 .dashboard__section {
   margin-bottom: 40px;
 }
