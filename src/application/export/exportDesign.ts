@@ -11,6 +11,7 @@ import type { Design, Page } from '../../domain/document.js';
 import type { StudioError } from '../../domain/errors.js';
 import { err, ok, type Result } from '../../domain/result.js';
 import type { MeasureText } from '../../domain/textLayout.js';
+import { buildPptx } from './pptxWriter.js';
 import { renderPageToCanvas } from './rasterRenderer.js';
 import { renderPageToSvg } from './svgRenderer.js';
 
@@ -78,6 +79,25 @@ export const exportSvg = (design: Design, page: Page, measure: MeasureText, page
       detail: cause instanceof Error ? cause.message : '알 수 없는 오류',
     });
   }
+};
+
+const PPTX_MEDIA_TYPE =
+  'application/vnd.openxmlformats-officedocument.presentationml.presentation';
+
+/**
+ * Write the whole document as a PowerPoint deck — one slide per page, with the
+ * text still editable. This is always the complete document: a deck with one
+ * slide missing is not a deck.
+ */
+export const exportPptx = async (
+  design: Design,
+  measure: MeasureText,
+  scale: number,
+): Promise<Result<void, StudioError>> => {
+  const built = await buildPptx({ design, measure, scale });
+  if (!built.ok) return built;
+  triggerDownload(new Blob([built.value], { type: PPTX_MEDIA_TYPE }), `${safeFileName(design.name)}.pptx`);
+  return ok(undefined);
 };
 
 export const exportJson = (design: Design): Result<void, StudioError> => {

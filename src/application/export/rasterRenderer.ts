@@ -18,6 +18,14 @@ export interface RenderOptions {
   readonly scale: number;
   /** Painted under the page, for formats without an alpha channel. */
   readonly flattenTo?: string;
+  /**
+   * Draw only these elements instead of the whole page. The PPTX writer uses
+   * it to rasterise one z-order run at a time, so that text can be emitted as
+   * real text between the runs without losing the stacking order.
+   */
+  readonly elements?: readonly DesignElement[];
+  /** `false` leaves the canvas transparent, for a layer drawn over another. */
+  readonly paintBackground?: boolean;
 }
 
 const loadImage = (src: string): Promise<HTMLImageElement | null> =>
@@ -29,9 +37,11 @@ const loadImage = (src: string): Promise<HTMLImageElement | null> =>
     image.src = src;
   });
 
-const collectImages = async (page: Page): Promise<Map<string, HTMLImageElement>> => {
+const collectImages = async (
+  elements: readonly DesignElement[],
+): Promise<Map<string, HTMLImageElement>> => {
   const sources = [
-    ...new Set(page.elements.filter((element) => element.type === 'image').map((element) => element.src)),
+    ...new Set(elements.filter((element) => element.type === 'image').map((element) => element.src)),
   ];
   const loaded = await Promise.all(sources.map(async (src) => [src, await loadImage(src)] as const));
   const map = new Map<string, HTMLImageElement>();
@@ -233,14 +243,17 @@ export const renderPageToCanvas = async (
     context.fillRect(0, 0, design.width, design.height);
   }
 
-  const background = applyPaint(context, page.background, design.width, design.height);
-  if (background !== null) {
-    context.fillStyle = background;
-    context.fillRect(0, 0, design.width, design.height);
+  if (options.paintBackground !== false) {
+    const background = applyPaint(context, page.background, design.width, design.height);
+    if (background !== null) {
+      context.fillStyle = background;
+      context.fillRect(0, 0, design.width, design.height);
+    }
   }
 
-  const images = await collectImages(page);
-  for (const element of page.elements) {
+  const elements = options.elements ?? page.elements;
+  const images = await collectImages(elements);
+  for (const element of elements) {
     drawElement(context, element, images, measure);
     context.filter = 'none';
     context.setLineDash([]);
