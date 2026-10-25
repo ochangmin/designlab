@@ -7,7 +7,7 @@
  * `domain/pptxImport.ts`; the engine stays behind `craftEngine.ts`.
  */
 
-import { designFromPresentation, type PptxImportOutcome } from '../../domain/pptxImport.js';
+import { designFromPresentation, type ImportOutcome } from '../../domain/pptxImport.js';
 import type { StudioError } from '../../domain/errors.js';
 import { err, ok, type Result } from '../../domain/result.js';
 import { loadCraftEngine } from './craftEngine.js';
@@ -44,7 +44,7 @@ const designNameFrom = (fileName: string): string => {
   return withoutExtension === '' ? '가져온 프레젠테이션' : withoutExtension;
 };
 
-export const openPptxFile = async (file: File): Promise<Result<PptxImportOutcome, StudioError>> => {
+export const openPptxFile = async (file: File): Promise<Result<ImportOutcome, StudioError>> => {
   if (file.size > MAX_BYTES) {
     return err({
       kind: 'asset-too-large',

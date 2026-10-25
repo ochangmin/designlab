@@ -11,6 +11,7 @@ import type { Design, Page } from '../../domain/document.js';
 import type { StudioError } from '../../domain/errors.js';
 import { err, ok, type Result } from '../../domain/result.js';
 import type { MeasureText } from '../../domain/textLayout.js';
+import { loadCraftEngine } from '../format/craftEngine.js';
 import { buildPptx } from './pptxWriter.js';
 import { renderPageToCanvas } from './rasterRenderer.js';
 import { renderPageToSvg } from './svgRenderer.js';
@@ -117,9 +118,56 @@ export const exportJson = (design: Design): Result<void, StudioError> => {
 };
 
 /**
- * Open a print view holding every page at its real size. The browser's own
- * print dialog turns it into a PDF, which keeps page sizes exact without
- * shipping a PDF writer.
+ * Write the document as a real PDF.
+ *
+ * Each page is rendered the same way PNG export renders it, and the PDF is
+ * assembled around those images by the format engine. The pages therefore have
+ * exact point sizes and the file downloads like any other — no print dialog,
+ * no "save as PDF" step. Needs the engine; `openPrintView` remains the path
+ * for a build without one.
+ */
+export const exportPdf = async (
+  design: Design,
+  measure: MeasureText,
+  scale: number,
+): Promise<Result<void, StudioError>> => {
+  const engine = await loadCraftEngine();
+  if (!engine.ok) return engine;
+
+  const builder = engine.value.newPdfBuilder();
+  try {
+    for (const page of design.pages) {
+      // Flattened to white: a page with no background of its own would
+      // otherwise arrive transparent, which a PDF reader shows as black.
+      const rendered = await renderPageToCanvas(design, page, measure, {
+        scale,
+        flattenTo: '#ffffff',
+      });
+      if (!rendered.ok) return rendered;
+
+      const blob = await canvasToBlob(rendered.value, 'png', 1);
+      if (!blob) {
+        return err({ kind: 'export-failed', format: 'PDF', detail: '페이지를 인코딩하지 못했습니다.' });
+      }
+      builder.addPage(new Uint8Array(await blob.arrayBuffer()));
+    }
+
+    // The engine divides pixels by the resolution to size each page, so this
+    // is what makes one design pixel the 0.75 pt it stands for.
+    const written = builder.finish(scale * 96);
+    if (!written.ok) return written;
+
+    triggerDownload(new Blob([written.value], { type: 'application/pdf' }), `${safeFileName(design.name)}.pdf`);
+    return ok(undefined);
+  } finally {
+    builder.release();
+  }
+};
+
+/**
+ * Open a print view holding every page at its real size. The fallback for a
+ * build without the format engine: the browser's own print dialog turns it
+ * into a PDF, which keeps page sizes exact without shipping a PDF writer.
  */
 export const openPrintView = async (
   design: Design,

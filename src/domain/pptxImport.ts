@@ -394,15 +394,19 @@ export interface PptxImportRequest {
   readonly name: string;
 }
 
-export interface PptxImportOutcome {
+/**
+ * The result of converting any foreign file: the document, plus what did not
+ * survive, phrased for the person who opened it. Shared by every importer, so
+ * the UI has one shape to present.
+ */
+export interface ImportOutcome {
   readonly design: Design;
-  /** What did not survive, phrased for the person who opened the file. */
   readonly notes: readonly string[];
 }
 
 export const designFromPresentation = (
   request: PptxImportRequest,
-): Result<PptxImportOutcome, DocumentMalformed> => {
+): Result<ImportOutcome, DocumentMalformed> => {
   const { model, mediaUrl, name } = request;
   if (!isRecord(model)) {
     return err({ kind: 'document-malformed', at: '$', detail: '발표 자료가 객체가 아닙니다.' });

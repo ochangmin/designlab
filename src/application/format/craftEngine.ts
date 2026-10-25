@@ -17,7 +17,7 @@ import { err, ok, type Result } from '../../domain/result.js';
 
 /** The bridge contract this build of the app was written against. */
 const REQUIRED_MAJOR = 0;
-const REQUIRED_MINOR = 2;
+const REQUIRED_MINOR = 3;
 
 /** An opened package, held on the Rust side so its media stays reachable. */
 interface BridgeDocument {
@@ -28,6 +28,19 @@ interface BridgeDocument {
   free: () => void;
 }
 
+interface BridgePdfBuilder {
+  add_page_png: (bytes: Uint8Array) => void;
+  page_count: () => number;
+  finish: (dpi: number) => Uint8Array;
+  free: () => void;
+}
+
+interface BridgePdfDocument {
+  page_count: () => number;
+  render_page_png: (page: number, scale: number) => Uint8Array;
+  free: () => void;
+}
+
 interface BridgeModule {
   readonly default: (input?: unknown) => Promise<unknown>;
   readonly bridge_version: () => string;
@@ -35,6 +48,30 @@ interface BridgeModule {
   readonly pptx_is_encrypted: (bytes: Uint8Array) => boolean;
   readonly PptxDocument: { open: (bytes: Uint8Array) => BridgeDocument };
   readonly pptx_export: (presentationJson: string) => Uint8Array;
+  readonly PdfBuilder: new () => BridgePdfBuilder;
+  readonly PdfDocument: {
+    open: (bytes: Uint8Array, password?: string) => BridgePdfDocument;
+  };
+}
+
+/**
+ * Collects page images and writes a PDF. `release()` is required: the pages
+ * stay in WebAssembly memory until it is called.
+ */
+export interface PdfBuilder {
+  readonly addPage: (png: Uint8Array) => void;
+  readonly pageCount: () => number;
+  /** `dpi` sizes the pages; see the bridge for why it is scale × 96. */
+  readonly finish: (dpi: number) => Result<Uint8Array, StudioError>;
+  readonly release: () => void;
+}
+
+/** An opened PDF. `release()` is required, as for a builder. */
+export interface PdfDocument {
+  readonly pageCount: number;
+  /** One page as PNG, at `scale` device pixels per PDF point. */
+  readonly renderPage: (page: number, scale: number) => Result<Uint8Array, StudioError>;
+  readonly release: () => void;
 }
 
 /**
@@ -58,6 +95,8 @@ export interface CraftEngine {
   readonly isPptxEncrypted: (bytes: Uint8Array) => boolean;
   readonly openPptx: (bytes: Uint8Array) => Result<PptxDocument, StudioError>;
   readonly exportPptx: (presentationJson: string) => Result<Uint8Array, StudioError>;
+  readonly newPdfBuilder: () => PdfBuilder;
+  readonly openPdf: (bytes: Uint8Array, password?: string) => Result<PdfDocument, StudioError>;
 }
 
 /** Served next to the page, so the path follows whatever base the site uses. */
@@ -118,6 +157,42 @@ const wrap = (module: BridgeModule): CraftEngine => ({
     } catch (cause) {
       return err({ kind: 'export-failed', format: 'PPTX', detail: messageOf(cause) });
     }
+  },
+
+  newPdfBuilder: () => {
+    const builder = new module.PdfBuilder();
+    return {
+      addPage: (png) => builder.add_page_png(png),
+      pageCount: () => builder.page_count(),
+      finish: (dpi) => {
+        try {
+          return ok(builder.finish(dpi));
+        } catch (cause) {
+          return err({ kind: 'export-failed', format: 'PDF', detail: messageOf(cause) });
+        }
+      },
+      release: () => builder.free(),
+    };
+  },
+
+  openPdf: (bytes, password) => {
+    let handle: BridgePdfDocument;
+    try {
+      handle = module.PdfDocument.open(bytes, password);
+    } catch (cause) {
+      return err({ kind: 'import-failed', format: 'PDF', detail: messageOf(cause) });
+    }
+    return ok({
+      pageCount: handle.page_count(),
+      renderPage: (page, scale) => {
+        try {
+          return ok(handle.render_page_png(page, scale));
+        } catch (cause) {
+          return err({ kind: 'import-failed', format: 'PDF', detail: messageOf(cause) });
+        }
+      },
+      release: () => handle.free(),
+    });
   },
 });
 

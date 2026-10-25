@@ -9,6 +9,7 @@ import { useState, type ReactElement } from 'react';
 
 import {
   exportJson,
+  exportPdf,
   exportPptx,
   exportRaster,
   exportSvg,
@@ -68,8 +69,20 @@ export const ExportDialog = ({ onClose }: ExportDialogProps): ReactElement => {
       }
 
       if (format === 'pdf') {
-        const result = await openPrintView(design, measure);
-        if (!result.ok) store.reportError(result.error);
+        const result = await exportPdf(design, measure, scale);
+        if (result.ok) {
+          store.notify('info', `${design.pages.length}쪽 PDF를 저장했습니다.`);
+          return;
+        }
+        // Only a missing engine falls back; a real failure is reported, not
+        // papered over with a different route that may fail the same way.
+        if (result.error.kind === 'engine-unavailable') {
+          const printed = await openPrintView(design, measure);
+          if (!printed.ok) store.reportError(printed.error);
+          else store.notify('info', '인쇄 창에서 "PDF로 저장"을 선택하세요.');
+          return;
+        }
+        store.reportError(result.error);
         return;
       }
 
@@ -109,8 +122,8 @@ export const ExportDialog = ({ onClose }: ExportDialogProps): ReactElement => {
   };
 
   const raster = format === 'png' || format === 'jpeg';
-  // PPTX rasterises its artwork layers, so the same scale applies.
-  const usesScale = raster || format === 'pptx';
+  // PPTX and PDF both rasterise, so the same scale applies.
+  const usesScale = raster || format === 'pptx' || format === 'pdf';
 
   return (
     <div className="sheet-backdrop" role="dialog" aria-modal="true" aria-label="내보내기">
@@ -155,7 +168,7 @@ export const ExportDialog = ({ onClose }: ExportDialogProps): ReactElement => {
             : format === 'pptx'
               ? `페이지마다 슬라이드 한 장, 총 ${design.pages.length}장. 텍스트는 파워포인트에서 그대로 수정할 수 있고, 도형·이미지·그라디언트는 이미지 레이어로 들어갑니다. 글꼴이 설치되어 있지 않으면 대체 글꼴로 보일 수 있습니다.`
               : format === 'pdf'
-                ? '인쇄 창이 열립니다. 대상에서 "PDF로 저장"을 선택하세요.'
+                ? `${design.pages.length}쪽짜리 PDF 파일을 바로 내려받습니다. 페이지 크기는 문서 그대로입니다.`
                 : format === 'svg'
                   ? '벡터로 내보냅니다. 업로드한 이미지는 파일 안에 포함됩니다.'
                   : 'JPG는 투명 배경을 흰색으로 채웁니다.'}
