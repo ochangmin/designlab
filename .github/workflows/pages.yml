@@ -18,7 +18,45 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # The WebAssembly bridge to the ArtCraft format crates. It is additive: if
+  # this job fails the site still deploys, just without PPTX import, which the
+  # app reports rather than breaking on.
+  engine:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: engine
+
+      # A pinned official release rather than `cargo install`, which would
+      # rebuild the tool on every cold cache.
+      - name: Install wasm-pack
+        run: |
+          curl -sSfL https://github.com/rustwasm/wasm-pack/releases/download/v0.13.1/wasm-pack-v0.13.1-x86_64-unknown-linux-musl.tar.gz \
+            | sudo tar -xz --strip-components=1 -C /usr/local/bin --wildcards '*/wasm-pack'
+          wasm-pack --version
+
+      - name: Build the bridge
+        run: wasm-pack build engine --target web --release --out-dir pkg --no-typescript
+
+      - name: Report the artifact size
+        run: ls -la engine/pkg
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: craft-engine
+          path: engine/pkg
+          if-no-files-found: error
+
   build:
+    needs: engine
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -27,6 +65,14 @@ jobs:
         with:
           node-version: 22
           cache: npm
+
+      # Absent when the engine job failed; the site is built without it.
+      - name: Fetch the format engine
+        uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: craft-engine
+          path: public/engine
 
       - name: Install locked dependencies
         run: npm ci

@@ -10,3 +10,9 @@ dist/
 # The REA repository that was studied for this project's architecture. It is a
 # separate upstream project (morluto/rea) and is not redistributed from here.
 _source/
+
+# Build outputs of the WebAssembly bridge. CI builds it and hands it to the
+# site build as an artifact; it is never committed.
+engine/target/
+engine/pkg/
+public/engine/
