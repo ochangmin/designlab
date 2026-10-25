@@ -37,6 +37,25 @@ pdfcraft-render = { git = "https://github.com/storytold/pdfcraft", rev = "418ac6
 # of pixels and a fraction of that encoded.
 png = "0.18"
 
+# PdfCraft's renderer is written against forks of the hayro stack, not the
+# published crates: against crates.io it fails on variants and methods the forks
+# add (InterpreterWarning::ColorFallback, OutlineGlyph::is_vertical, …). Those
+# forks live in the pdfcraft repository under vendor/, and upstream reaches them
+# with path patches, which a git dependency cannot inherit. Naming the same
+# repository as a git patch reaches the same sources.
+#
+# `cos` and `create` — the PDF writing path — need none of this; they compiled
+# against the published hayro-syntax.
+[patch.crates-io]
+hayro = { git = "https://github.com/storytold/pdfcraft", rev = "418ac6a2af49b7ac2fed44ca2cae8d5d1d2cec0d" }
+hayro-interpret = { git = "https://github.com/storytold/pdfcraft", rev = "418ac6a2af49b7ac2fed44ca2cae8d5d1d2cec0d" }
+hayro-syntax = { git = "https://github.com/storytold/pdfcraft", rev = "418ac6a2af49b7ac2fed44ca2cae8d5d1d2cec0d" }
+hayro-cmap = { git = "https://github.com/storytold/pdfcraft", rev = "418ac6a2af49b7ac2fed44ca2cae8d5d1d2cec0d" }
+hayro-postscript = { git = "https://github.com/storytold/pdfcraft", rev = "418ac6a2af49b7ac2fed44ca2cae8d5d1d2cec0d" }
+hayro-jbig2 = { git = "https://github.com/storytold/pdfcraft", rev = "418ac6a2af49b7ac2fed44ca2cae8d5d1d2cec0d" }
+lopdf = { git = "https://github.com/storytold/pdfcraft", rev = "418ac6a2af49b7ac2fed44ca2cae8d5d1d2cec0d" }
+vello_common = { git = "https://github.com/storytold/pdfcraft", rev = "418ac6a2af49b7ac2fed44ca2cae8d5d1d2cec0d" }
+
 [profile.release]
 opt-level = "z"
 lto = true
