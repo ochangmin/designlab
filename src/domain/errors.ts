@@ -124,6 +124,17 @@ export interface ProfileMalformed {
   readonly detail: string;
 }
 
+export interface EngineUnavailable {
+  readonly kind: 'engine-unavailable';
+  readonly detail: string;
+}
+
+export interface ImportFailed {
+  readonly kind: 'import-failed';
+  readonly format: string;
+  readonly detail: string;
+}
+
 export type StudioError =
   | StorageUnavailable
   | StorageQuotaExceeded
@@ -133,6 +144,8 @@ export type StudioError =
   | AssetTooLarge
   | AssetUnreadable
   | ExportFailed
+  | EngineUnavailable
+  | ImportFailed
   | AuthNotConfigured
   | AuthInvalidCredentials
   | AuthEmailTaken
@@ -172,6 +185,10 @@ export const describeError = (error: StudioError): string => {
       return `${error.fileName}을(를) 읽지 못했습니다: ${error.detail}`;
     case 'export-failed':
       return `${error.format} 내보내기에 실패했습니다: ${error.detail}`;
+    case 'engine-unavailable':
+      return `이 빌드에는 포맷 엔진이 포함되어 있지 않습니다 (${error.detail}). 기본 내보내기는 그대로 사용할 수 있습니다.`;
+    case 'import-failed':
+      return `${error.format} 파일을 읽지 못했습니다: ${error.detail}`;
     case 'auth-not-configured':
       return '이 빌드에는 계정 서버가 연결되어 있지 않습니다. 편집과 로컬 저장은 그대로 사용할 수 있습니다.';
     case 'auth-invalid-credentials':
