@@ -1,6 +1,6 @@
 [package]
 name = "craft-bridge"
-version = "0.2.0"
+version = "0.3.0"
 edition = "2021"
 publish = false
 license = "MIT OR Apache-2.0"
@@ -23,6 +23,19 @@ serde_json = "1"
 # deckcraft-fonts, whose build script wants a CRAFT_FONTS_DIR checkout.
 deckcraft-pptx = { git = "https://github.com/storytold/deckcraft", rev = "38d2ade2b77de39c0e06278ddfd44d1082ff80a8" }
 deckcraft-model = { git = "https://github.com/storytold/deckcraft", rev = "38d2ade2b77de39c0e06278ddfd44d1082ff80a8" }
+
+# PdfCraft, for real PDF writing and reading. Upstream redirects `hayro-*` and
+# `lopdf` to vendored forks through `[patch.crates-io]`, which a git dependency
+# does not inherit; its workspace declares them by version, so this build
+# resolves the published crates instead. Deliberately absent: the UI, OCR and
+# signing crates, none of which this bridge calls.
+pdfcraft-cos = { git = "https://github.com/storytold/pdfcraft", rev = "418ac6a2af49b7ac2fed44ca2cae8d5d1d2cec0d" }
+pdfcraft-create = { git = "https://github.com/storytold/pdfcraft", rev = "418ac6a2af49b7ac2fed44ca2cae8d5d1d2cec0d" }
+pdfcraft-render = { git = "https://github.com/storytold/pdfcraft", rev = "418ac6a2af49b7ac2fed44ca2cae8d5d1d2cec0d" }
+
+# Rasterised pages leave as PNG rather than raw RGBA: a 2x A4 page is some 35 MB
+# of pixels and a fraction of that encoded.
+png = "0.18"
 
 [profile.release]
 opt-level = "z"

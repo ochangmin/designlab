@@ -24,6 +24,10 @@ jobs:
   engine:
     runs-on: ubuntu-latest
     continue-on-error: true
+    env:
+      # getrandom 0.3+ needs its web backend named explicitly for
+      # wasm32-unknown-unknown; PdfCraft's renderer depends on it.
+      RUSTFLAGS: --cfg getrandom_backend="wasm_js"
     steps:
       - uses: actions/checkout@v5
 
