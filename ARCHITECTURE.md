@@ -39,8 +39,12 @@ Node에서 그대로 테스트됩니다.
 | `domain/shapes.ts` | 도형의 윤곽선(SVG path) |
 | `domain/mutations.ts` | 문서의 구조적 변경 |
 | `domain/parse.ts` | 외부 JSON → `Design` (유일한 입력 경계) |
+| `domain/account.ts` | 회원이 무엇인가 — 역할, 가입 경로, 사용 중지, 자격 검사 |
 | `application/editorStore.ts` | 선택, 뷰포트, 실행 취소 스택 |
-| `application/projectRepository.ts` | 저장소 키 형식 |
+| `application/auth/accountStore.ts` | 누가 로그인했는가 |
+| `application/projectStore.ts` | 디자인이 어디에 저장되는가 |
+| `application/projectRepository.ts` | 로컬 저장소 키 형식 |
+| `application/supabase/` | Supabase SDK와 닿는 모든 코드 |
 | `ui/ElementRenderer.tsx` | 요소를 화면에 그리는 방법 |
 
 핵심 결과 하나: **에디터, PNG, SVG가 같은 줄바꿈과 같은 path를 읽습니다.**
@@ -48,6 +52,26 @@ Node에서 그대로 테스트됩니다.
 SVG 렌더러는 `<tspan>`으로 그립니다. 브라우저의 자동 줄바꿈에 맡기지 않기 때문에
 내보낸 파일이 화면과 어긋날 수 없습니다. 도형도 `shapePath()` 문자열 하나를
 `<path d>`, `Path2D`, SVG가 함께 사용합니다.
+
+## 계정과 저장 위치
+
+로그인 여부에 따라 디자인이 브라우저에 남을지 계정으로 갈지가 달라지지만, 화면은
+그 차이를 모릅니다. `application/projectStore.ts`가 비동기 포트 하나를 정의하고
+로컬 어댑터와 Supabase 어댑터를 모두 그 뒤에 두며, `chooseProjectStore()`가 선택을
+단독으로 소유합니다. 디자인을 열고 저장하고 지우는 세 지점은 포트만 호출하므로,
+원격 저장을 추가하면서 두 번째 코드 경로가 화면으로 번지지 않았습니다.
+
+인증도 같은 모양입니다. `application/auth/authPort.ts`가 이 앱의 어휘로 계약을
+적고, `application/supabase/`만 SDK를 만집니다. 이 경계는 설명이 아니라 검사입니다
+— `tests/moduleBoundaries.test.ts`가 `@supabase/*` import가 그 디렉터리 밖에
+나타나지 않는지, domain이 상위 레이어를 import하지 않는지, application 레이어에
+React가 섞이지 않는지를 소스에서 직접 확인합니다.
+
+**권한을 막는 것은 UI가 아닙니다.** 클라이언트는 anon 키만 쥐고 있고, 누가 무엇을
+읽고 쓸 수 있는지는 전부 `supabase/migrations/`의 RLS 정책과 트리거가 정합니다.
+회원 관리 화면을 관리자가 아닌 사람에게 숨기는 것은 예의일 뿐이고, 실제로 거절하는
+쪽은 데이터베이스입니다. 역할을 바꾸는 열 하나까지 트리거가 지키기 때문에, 회원이
+자기 행을 고쳐 관리자가 될 수 없습니다.
 
 ## 모델이 납작한 이유
 

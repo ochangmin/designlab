@@ -2,7 +2,7 @@
 
 import { useEffect, type ReactElement } from 'react';
 
-import { saveProject } from '../../application/projectRepository.js';
+import { useProjectStore } from '../authContext.js';
 import { Inspector } from './Inspector.js';
 import { LeftRail } from './LeftRail.js';
 import { PagesStrip } from './PagesStrip.js';
@@ -20,21 +20,30 @@ export interface EditorProps {
 export const Editor = ({ onExit }: EditorProps): ReactElement => {
   const store = useStore();
   const state = useEditorState();
+  const projects = useProjectStore();
   useShortcuts(store);
 
   // Autosave is debounced on the document itself, so a drag writes once when it
-  // settles rather than on every pointer event.
+  // settles rather than on every pointer event. A write that is still in flight
+  // when the next edit lands is abandoned by `cancelled`, so a slow response
+  // cannot report an older document as the saved one.
   useEffect(() => {
+    let cancelled = false;
     const timer = globalThis.setTimeout(() => {
-      const result = saveProject(state.design);
-      if (!result.ok) {
-        store.reportError(result.error);
-        return;
-      }
-      store.markSaved();
+      void projects.save(state.design).then((result) => {
+        if (cancelled) return;
+        if (!result.ok) {
+          store.reportError(result.error);
+          return;
+        }
+        store.markSaved();
+      });
     }, AUTOSAVE_DELAY_MS);
-    return () => globalThis.clearTimeout(timer);
-  }, [state.design, store]);
+    return () => {
+      cancelled = true;
+      globalThis.clearTimeout(timer);
+    };
+  }, [state.design, store, projects]);
 
   useEffect(() => {
     if (state.notice === null) return;

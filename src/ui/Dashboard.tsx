@@ -6,9 +6,11 @@
  * because both answer "what am I opening?".
  */
 
-import { useMemo, useRef, useState, type ReactElement } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactElement } from 'react';
 
-import { deleteProject, listProjects, loadProject, type ProjectSummary } from '../application/projectRepository.js';
+import type { ProjectSummary } from '../application/projectStore.js';
+import { AccountMenu } from './auth/AccountMenu.js';
+import { useProjectStore } from './authContext.js';
 import { SHAPE_LABELS } from '../domain/elements.js';
 import { describeError } from '../domain/errors.js';
 import { ICONS } from '../domain/icons.js';
@@ -40,31 +42,53 @@ const CAPABILITIES: readonly { readonly label: string; readonly value: number }[
   { label: '글꼴', value: FONTS.length },
 ];
 
+interface Listing {
+  readonly projects: readonly ProjectSummary[];
+  readonly notice: string | null;
+  readonly loading: boolean;
+}
+
 export interface DashboardProps {
   readonly measure: MeasureText;
   readonly onOpen: (design: Design) => void;
+  readonly onOpenAuth: () => void;
+  readonly onOpenMembers: () => void;
 }
 
-export const Dashboard = ({ measure, onOpen }: DashboardProps): ReactElement => {
+export const Dashboard = ({ measure, onOpen, onOpenAuth, onOpenMembers }: DashboardProps): ReactElement => {
+  const projectStore = useProjectStore();
   const [refreshToken, setRefreshToken] = useState(0);
   const [message, setMessage] = useState<string | null>(null);
   const [customWidth, setCustomWidth] = useState(1080);
   const [customHeight, setCustomHeight] = useState(1080);
   const templatesRef = useRef<HTMLElement | null>(null);
 
-  // One read of the repository per refresh: the list and the storage notice are
-  // two views of the same outcome, not two lookups.
-  const stored = useMemo(() => {
-    void refreshToken;
-    return listProjects();
-  }, [refreshToken]);
-  const projects: readonly ProjectSummary[] = stored.ok ? stored.value : [];
-  const storageNotice = stored.ok ? null : describeError(stored.error);
+  // One read per refresh, and the store it reads from changes with the session:
+  // signing in re-runs this against the server without the screen knowing how.
+  const [listing, setListing] = useState<Listing>({ projects: [], notice: null, loading: true });
+  useEffect(() => {
+    let cancelled = false;
+    setListing((current) => ({ ...current, loading: true }));
+    void projectStore.list().then((result) => {
+      if (cancelled) return;
+      setListing(
+        result.ok
+          ? { projects: result.value, notice: null, loading: false }
+          : { projects: [], notice: describeError(result.error), loading: false },
+      );
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [projectStore, refreshToken]);
+
+  const projects = listing.projects;
+  const storageNotice = listing.notice;
 
   const templatePreviews = useMemo(() => TEMPLATES.map((template) => ({ template, design: template.build() })), []);
 
-  const openProject = (id: string): void => {
-    const result = loadProject(id);
+  const openProject = async (id: string): Promise<void> => {
+    const result = await projectStore.load(id);
     if (!result.ok) {
       setMessage(describeError(result.error));
       return;
@@ -72,10 +96,10 @@ export const Dashboard = ({ measure, onOpen }: DashboardProps): ReactElement => 
     onOpen(result.value);
   };
 
-  const removeProject = (summary: ProjectSummary): void => {
+  const removeProject = async (summary: ProjectSummary): Promise<void> => {
     const confirmed = globalThis.confirm(`"${summary.name}"을(를) 삭제할까요? 되돌릴 수 없습니다.`);
     if (!confirmed) return;
-    const result = deleteProject(summary.id);
+    const result = await projectStore.remove(summary.id);
     if (!result.ok) {
       setMessage(describeError(result.error));
       return;
@@ -118,6 +142,7 @@ export const Dashboard = ({ measure, onOpen }: DashboardProps): ReactElement => 
               }}
             />
           </label>
+          <AccountMenu onOpenAuth={onOpenAuth} onOpenMembers={onOpenMembers} />
         </div>
       </header>
 
@@ -286,7 +311,9 @@ export const Dashboard = ({ measure, onOpen }: DashboardProps): ReactElement => 
       <section className="dashboard__section">
         <div className="dashboard__head">
           <h2>내 디자인</h2>
-          <span className="dashboard__count">{projects.length === 0 ? '없음' : `${projects.length}개`}</span>
+          <span className="dashboard__count">
+            {listing.loading ? '불러오는 중…' : projects.length === 0 ? '없음' : `${projects.length}개`}
+          </span>
         </div>
         {projects.length === 0 ? (
           <p className="empty">아직 저장된 디자인이 없습니다. 위에서 템플릿이나 크기를 선택해 시작해 보세요.</p>
@@ -294,7 +321,7 @@ export const Dashboard = ({ measure, onOpen }: DashboardProps): ReactElement => 
           <ul className="project-list">
             {projects.map((summary, index) => (
               <li key={summary.id} className="project-row stagger-item" style={cssVars({ '--i': index })}>
-                <button type="button" className="project-row__open" onClick={() => openProject(summary.id)}>
+                <button type="button" className="project-row__open" onClick={() => void openProject(summary.id)}>
                   <span className="project-row__name">{summary.name}</span>
                   <span className="project-row__meta">
                     {summary.width} × {summary.height} · {summary.pageCount}페이지 · {relativeTime(summary.updatedAt)}
@@ -303,7 +330,7 @@ export const Dashboard = ({ measure, onOpen }: DashboardProps): ReactElement => 
                 <button
                   type="button"
                   className="button button--quiet"
-                  onClick={() => removeProject(summary)}
+                  onClick={() => void removeProject(summary)}
                   aria-label={`${summary.name} 삭제`}
                 >
                   삭제

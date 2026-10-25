@@ -1,0 +1,285 @@
+/* Account surfaces: the sign-in sheet, the account menu, the member table.
+ *
+ * Static presentation only. Motion for these screens comes from the shared
+ * `.sheet`, `.toast` and control rules that motion.css already owns, so there
+ * is still exactly one place where a timing changes. */
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.auth-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--ink-faint);
+}
+
+.auth-form input {
+  padding: 9px 11px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  font: inherit;
+  font-size: 14px;
+  color: var(--ink);
+  background: var(--surface);
+}
+
+.auth-form input:focus {
+  outline: 2px solid var(--accent-soft);
+  border-color: var(--accent);
+}
+
+.auth-problem {
+  margin: 0;
+  color: #b42318;
+  font-size: 12px;
+}
+
+.auth-divider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--ink-faint);
+  font-size: 11px;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--line);
+}
+
+.auth-providers {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.auth-provider {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  background: var(--surface);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.auth-provider:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.auth-provider__mark {
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  flex: none;
+}
+
+.auth-provider--google .auth-provider__mark {
+  background: conic-gradient(#ea4335 0 25%, #fbbc05 0 50%, #34a853 0 75%, #4285f4 0);
+}
+
+.auth-provider--kakao {
+  background: #fee500;
+  border-color: #f2d900;
+  color: #191600;
+}
+
+.auth-provider--kakao .auth-provider__mark {
+  background: #191600;
+  border-radius: 50%;
+}
+
+.auth-switch {
+  margin: 0;
+  text-align: center;
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+
+.auth-switch button {
+  border: 0;
+  background: none;
+  padding: 0;
+  font: inherit;
+  font-weight: 600;
+  color: var(--accent);
+  cursor: pointer;
+}
+
+/* ------------------------------------------------------------ account menu */
+
+.account {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.account__trigger {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 10px 5px 5px;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  background: var(--surface);
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+}
+
+.account__avatar {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 700;
+  flex: none;
+}
+
+.account__name {
+  font-size: 13px;
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.account__menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 20;
+  min-width: 208px;
+  padding: 6px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-md);
+}
+
+.account__identity {
+  padding: 8px 10px 10px;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 6px;
+}
+
+.account__identity strong {
+  display: block;
+  font-size: 13px;
+}
+
+.account__identity small {
+  color: var(--ink-faint);
+  font-size: 11px;
+  word-break: break-all;
+}
+
+.account__menu button {
+  display: block;
+  width: 100%;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  color: inherit;
+  text-align: left;
+}
+
+.account__menu button:hover {
+  background: var(--surface-sunken);
+}
+
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  background: var(--surface-sunken);
+  color: var(--ink-soft);
+}
+
+.badge--admin {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.badge--disabled {
+  background: #fdecec;
+  color: #a32020;
+}
+
+/* ----------------------------------------------------------- member table */
+
+.members {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.members th,
+.members td {
+  padding: 10px 12px;
+  text-align: left;
+  border-bottom: 1px solid var(--line);
+  vertical-align: middle;
+}
+
+.members th {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ink-faint);
+  font-weight: 600;
+}
+
+.members td:last-child,
+.members th:last-child {
+  text-align: right;
+}
+
+.members__name {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.members__name small {
+  color: var(--ink-faint);
+  font-size: 11px;
+  word-break: break-all;
+}
+
+.members__actions {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.members__self {
+  color: var(--ink-faint);
+  font-size: 11px;
+}

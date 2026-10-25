@@ -22,7 +22,8 @@ React와 ReactDOM 둘뿐이며, 상태 관리·캔버스·아이콘 라이브러
 
 - 다중 페이지, 페이지 추가·복제·삭제·순서 변경
 - 10가지 문서 크기 프리셋과 직접 입력, 작업 중 크기 변경
-- 로컬 자동 저장(디바운스 700ms), 프로젝트 목록, `.designlab.json` 가져오기·내보내기
+- 자동 저장(디바운스 700ms), 프로젝트 목록, `.designlab.json` 가져오기·내보내기
+- 로그아웃 상태에서는 이 브라우저에, 로그인하면 계정에 저장
 
 **요소**
 
@@ -44,6 +45,13 @@ React와 ReactDOM 둘뿐이며, 상태 관리·캔버스·아이콘 라이브러
 
 - PNG / JPG (1×·2×·3×), SVG, PDF(인쇄 창), 편집용 JSON
 - 다중 페이지 일괄 내보내기
+
+**계정**
+
+- 이메일·비밀번호 가입과 로그인, 비밀번호 재설정
+- Google, 카카오 로그인
+- 관리자용 회원 관리: 가입 경로·가입일·상태 확인, 권한 변경, 사용 중지
+- 계정 서버가 연결되지 않은 빌드에서는 편집과 로컬 저장이 그대로 동작
 
 ## 단축키
 
@@ -95,11 +103,97 @@ GitHub 저장소에 연결되어 있지 않으므로 푸시로는 갱신되지 �
 
 커스텀 도메인은 두 대상 중 한 곳에만 연결할 수 있습니다.
 
+## 계정 서버 설정
+
+계정 기능은 Supabase(Postgres + Auth)를 씁니다. 설정하지 않아도 앱은 그대로
+동작하며, 이때 디자인은 브라우저에만 저장되고 로그인 버튼 자리에 "로컬 저장"이
+표시됩니다.
+
+**아래 작업은 계정과 키가 필요하므로 직접 하셔야 합니다.**
+
+### 1. Supabase 프로젝트
+
+[supabase.com](https://supabase.com)에서 프로젝트를 만들고, Project Settings →
+API에서 **Project URL**과 **anon public** 키를 복사합니다. `service_role` 키는
+절대 클라이언트에 넣지 마세요 — 이 앱은 anon 키만 사용하며, 접근 통제는 전부
+아래 RLS가 담당합니다.
+
+### 2. 스키마 적용
+
+[supabase/migrations/0001_accounts_and_designs.sql](supabase/migrations/0001_accounts_and_designs.sql)을
+SQL Editor에 붙여넣고 실행하거나, CLI로 적용합니다.
+
+```bash
+npx supabase db push
+```
+
+`profiles`·`designs` 테이블, 가입 시 프로필을 만드는 트리거, 그리고 본인 행만
+읽고 쓰도록 하는 RLS 정책이 함께 만들어집니다.
+
+### 3. 환경변수
+
+로컬 개발은 저장소 루트에 `.env.local`을 만듭니다 (`.gitignore`에 이미
+포함되어 커밋되지 않습니다).
+
+```
+VITE_SUPABASE_URL=https://<프로젝트>.supabase.co
+VITE_SUPABASE_ANON_KEY=<anon public 키>
+```
+
+GitHub Pages 배포에도 넣으려면 저장소 Settings → Secrets and variables →
+Actions에 같은 이름으로 등록하고, `.github/workflows/pages.yml`의 빌드 단계에
+`env:`로 전달해야 합니다. anon 키는 공개되어도 되는 값이지만, 빌드 결과물에
+포함되므로 이를 알고 쓰는 편이 좋습니다.
+
+### 4. Google 로그인
+
+[Google Cloud Console](https://console.cloud.google.com)에서 OAuth 2.0 클라이언트
+ID를 만들고, 승인된 리디렉션 URI에 Supabase가 알려주는 콜백 주소를 넣습니다.
+
+```
+https://<프로젝트>.supabase.co/auth/v1/callback
+```
+
+발급된 클라이언트 ID와 secret을 Supabase의 Authentication → Providers → Google에
+입력하고 켭니다.
+
+### 5. 카카오 로그인
+
+[Kakao Developers](https://developers.kakao.com)에서 앱을 만들고 카카오 로그인을
+활성화한 뒤, Redirect URI에 위와 같은 Supabase 콜백 주소를 등록합니다. REST API
+키와 Client Secret을 Supabase의 Authentication → Providers → Kakao에 입력합니다.
+동의 항목에서 이메일을 받도록 설정해야 회원 목록에 이메일이 표시됩니다.
+
+### 6. 앱으로 돌아올 주소
+
+Supabase의 Authentication → URL Configuration에서 Site URL과 Redirect URLs에
+앱 주소를 등록합니다. 개발용과 배포용을 모두 넣어야 합니다.
+
+```
+http://localhost:5173
+https://ochangmin.github.io/designlab/
+```
+
+### 7. 첫 관리자
+
+모든 계정은 `member`로 시작합니다. 본인 계정으로 가입한 뒤 SQL Editor에서 한 번만
+승격하세요.
+
+```sql
+update public.profiles set role = 'admin' where email = '본인이메일';
+```
+
+클라이언트에서는 이 변경이 거부됩니다. 관리자는 데이터베이스를 가진 사람만 만들 수
+있다는 뜻이고, 그게 의도입니다. 관리자는 자신의 권한과 상태를 바꿀 수 없어서
+혼자뿐인 관리자가 스스로를 잠가버리는 일도 일어나지 않습니다.
+
 ## 설계상 알아둘 점
 
-- **저장은 브라우저 로컬입니다.** `localStorage`에 프로젝트가 저장되며 서버나 계정은
-  없습니다. 같은 브라우저에서만 목록이 보이고, 사이트 데이터를 지우면 함께 사라집니다.
-  중요한 작업은 JSON으로 내보내 두세요.
+- **로그아웃 상태의 저장은 브라우저 로컬입니다.** `localStorage`에 저장되므로 같은
+  브라우저에서만 목록이 보이고, 사이트 데이터를 지우면 함께 사라집니다. 로그인하면
+  같은 포트를 통해 계정으로 저장되지만, 로컬에 있던 기존 디자인이 자동으로 옮겨가지는
+  않습니다 — JSON으로 내보냈다가 로그인 후 다시 열면 됩니다.
+- **결제·구독 기능은 없습니다.** 회원 관리까지만 구현되어 있습니다.
 - **업로드한 이미지는 데이터 URL로 문서 안에 들어갑니다.** 그래서 저장·공유가 단순한
   대신 `localStorage` 용량(보통 5MB 내외)을 빠르게 소모합니다. 한도를 넘으면 자동 저장이
   실패했다고 명확히 알립니다.
