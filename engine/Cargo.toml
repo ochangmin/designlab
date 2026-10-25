@@ -30,3 +30,18 @@ lto = true
 codegen-units = 1
 panic = "abort"
 strip = true
+
+# wasm-pack ships its own binaryen, which validates against a feature set older
+# than what current rustc emits: without these the build fails on `memory.copy`
+# with "Bulk memory operations require bulk memory". Naming the features keeps
+# the optimiser rather than turning it off.
+[package.metadata.wasm-pack.profile.release]
+wasm-opt = [
+  "-O",
+  "--enable-bulk-memory",
+  "--enable-sign-ext",
+  "--enable-mutable-globals",
+  "--enable-nontrapping-float-to-int",
+  "--enable-reference-types",
+  "--enable-multivalue",
+]
