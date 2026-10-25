@@ -1,57 +1,24 @@
 /**
- * Starter documents.
+ * The template catalogue.
  *
- * A template is a function that produces a complete `Design` with fresh
- * identity, built from the same element factories the editor uses. There is no
- * separate template format to keep in step, and a template thumbnail is the
- * real document rendered small.
+ * The founding set lives here; later additions are grouped by category in
+ * `templates/`. All of them are assembled from `templateBuilders.ts`, which
+ * owns what a template is, so no catalogue imports another.
  */
 
 import { createIcon, createShape, createText } from './elements.js';
-import { createId } from './ids.js';
-import { findIcon } from './icons.js';
-import { SCHEMA_VERSION, type Design, type DesignElement, type Page, type Paint } from './document.js';
+import type { Design } from './document.js';
+import { design, iconPath, page, WHITE, type TemplateDefinition } from './templateBuilders.js';
+import { MARKETING_TEMPLATES } from './templates/marketing.js';
+import { PRESENTATION_TEMPLATES } from './templates/presentation.js';
+import { PRINT_TEMPLATES } from './templates/print.js';
+import { SOCIAL_TEMPLATES } from './templates/social.js';
 
-const page = (name: string, background: Paint, elements: readonly DesignElement[]): Page => ({
-  id: createId('pg'),
-  name,
-  background,
-  elements,
-});
-
-const design = (
-  name: string,
-  width: number,
-  height: number,
-  palette: readonly string[],
-  pages: readonly Page[],
-): Design => {
-  const now = Date.now();
-  return {
-    id: createId('dsn'),
-    schemaVersion: SCHEMA_VERSION,
-    name,
-    width,
-    height,
-    pages,
-    palette,
-    createdAt: now,
-    updatedAt: now,
-  };
-};
-
-const iconPath = (id: string): string => findIcon(id)?.pathData ?? '';
-
-export interface TemplateDefinition {
-  readonly id: string;
-  readonly label: string;
-  readonly category: '소셜' | '프레젠테이션' | '인쇄' | '마케팅';
-  readonly build: () => Design;
-}
+export type { TemplateCategory, TemplateDefinition } from './templateBuilders.js';
 
 export const createBlankDesign = (name: string, width: number, height: number): Design =>
   design(name, width, height, ['#111827', '#6d5efc', '#f472b6', '#f4f4f5', '#ffffff'], [
-    page('페이지 1', { kind: 'solid', color: '#ffffff' }, []),
+    page('페이지 1', WHITE, []),
   ]);
 
 const boldSale = (): Design =>
@@ -767,6 +734,10 @@ export const TEMPLATES: readonly TemplateDefinition[] = [
   { id: 'business-card', label: '명함', category: '인쇄', build: businessCard },
   { id: 'cafe-menu', label: '카페 메뉴', category: '인쇄', build: menu },
   { id: 'photo-collage', label: '사진 레이아웃', category: '소셜', build: photoCollage },
+  ...SOCIAL_TEMPLATES,
+  ...MARKETING_TEMPLATES,
+  ...PRESENTATION_TEMPLATES,
+  ...PRINT_TEMPLATES,
 ];
 
 export const findTemplate = (id: string): TemplateDefinition | null =>
