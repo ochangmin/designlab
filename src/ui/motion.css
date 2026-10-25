@@ -283,6 +283,7 @@
 .shape-tile,
 .icon-tile,
 .gradient-tile,
+.graphic-tile,
 .template-tile,
 .swatch,
 .align-grid button,
@@ -309,7 +310,8 @@
 
 .shape-tile:hover,
 .icon-tile:hover,
-.gradient-tile:hover {
+.gradient-tile:hover,
+.graphic-tile:hover {
   transform: translateY(-2px);
 }
 

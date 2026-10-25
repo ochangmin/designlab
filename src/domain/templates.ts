@@ -288,6 +288,248 @@ const deck = (): Design =>
         color: '#1f2a53',
       }),
     ]),
+    page('섹션 구분', { kind: 'solid', color: '#0b1021' }, [
+      createText('01', { x: 160, y: 300, width: 500, height: 300 }, {
+        fontFamily: 'Montserrat',
+        fontSize: 260,
+        fontWeight: 800,
+        letterSpacing: -10,
+        color: '#2a3568',
+      }),
+      createText('시장과 사용자 변화', { x: 160, y: 620, width: 1200, height: 140 }, {
+        fontFamily: 'Noto Sans KR',
+        fontSize: 92,
+        fontWeight: 700,
+        color: '#ffffff',
+      }),
+      createShape('rectangle', { x: 160, y: 800, width: 220, height: 10 }, {
+        fill: { kind: 'gradient', from: '#6d5efc', to: '#a5b4fc', angle: 90 },
+        radius: 5,
+      }),
+    ]),
+    page('본문 2단', { kind: 'solid', color: '#ffffff' }, [
+      createText('무엇이 달라졌나', { x: 160, y: 130, width: 1200, height: 110 }, {
+        fontFamily: 'Montserrat',
+        fontSize: 72,
+        fontWeight: 800,
+        letterSpacing: -2,
+        color: '#0b1021',
+      }),
+      createShape('rectangle', { x: 160, y: 300, width: 60, height: 8 }, {
+        fill: { kind: 'solid', color: '#6d5efc' },
+        radius: 4,
+      }),
+      createText('사용자', { x: 160, y: 350, width: 700, height: 70 }, {
+        fontFamily: 'Noto Sans KR',
+        fontSize: 44,
+        fontWeight: 700,
+        color: '#0b1021',
+      }),
+      createText(
+        '모바일에서 먼저 열어보고, 결정은 데스크톱에서 합니다. 첫 화면에서 결과를 보여주지 못하면 다음 단계로 넘어가지 않습니다.',
+        { x: 160, y: 440, width: 700, height: 300 },
+        { fontFamily: 'Noto Sans KR', fontSize: 34, fontWeight: 400, lineHeight: 1.75, color: '#4b5168' },
+      ),
+      createShape('rectangle', { x: 1020, y: 300, width: 60, height: 8 }, {
+        fill: { kind: 'solid', color: '#f472b6' },
+        radius: 4,
+      }),
+      createText('시장', { x: 1020, y: 350, width: 700, height: 70 }, {
+        fontFamily: 'Noto Sans KR',
+        fontSize: 44,
+        fontWeight: 700,
+        color: '#0b1021',
+      }),
+      createText(
+        '경쟁 제품이 무료 구간을 넓히면서, 가격이 아니라 완성까지 걸리는 시간이 선택 기준이 되었습니다.',
+        { x: 1020, y: 440, width: 700, height: 300 },
+        { fontFamily: 'Noto Sans KR', fontSize: 34, fontWeight: 400, lineHeight: 1.75, color: '#4b5168' },
+      ),
+    ]),
+    page('수치', { kind: 'solid', color: '#f4f5ff' }, [
+      createText('핵심 지표', { x: 160, y: 130, width: 900, height: 110 }, {
+        fontFamily: 'Montserrat',
+        fontSize: 72,
+        fontWeight: 800,
+        letterSpacing: -2,
+        color: '#0b1021',
+      }),
+      createText('+42%', { x: 160, y: 420, width: 480, height: 180 }, {
+        fontFamily: 'Montserrat',
+        fontSize: 150,
+        fontWeight: 800,
+        letterSpacing: -6,
+        color: '#6d5efc',
+      }),
+      createText('주간 활성 사용자', { x: 160, y: 620, width: 480, height: 70 }, {
+        fontFamily: 'Noto Sans KR',
+        fontSize: 34,
+        fontWeight: 500,
+        color: '#4b5168',
+      }),
+      createText('2.4배', { x: 740, y: 420, width: 480, height: 180 }, {
+        fontFamily: 'Montserrat',
+        fontSize: 150,
+        fontWeight: 800,
+        letterSpacing: -6,
+        color: '#0b1021',
+      }),
+      createText('첫 디자인 완성률', { x: 740, y: 620, width: 480, height: 70 }, {
+        fontFamily: 'Noto Sans KR',
+        fontSize: 34,
+        fontWeight: 500,
+        color: '#4b5168',
+      }),
+      createText('18일', { x: 1320, y: 420, width: 480, height: 180 }, {
+        fontFamily: 'Montserrat',
+        fontSize: 150,
+        fontWeight: 800,
+        letterSpacing: -6,
+        color: '#f472b6',
+      }),
+      createText('평균 재방문 주기', { x: 1320, y: 620, width: 480, height: 70 }, {
+        fontFamily: 'Noto Sans KR',
+        fontSize: 34,
+        fontWeight: 500,
+        color: '#4b5168',
+      }),
+      createShape('line', { x: 160, y: 360, width: 1600, height: 3 }, {
+        stroke: { color: '#c7cdf2', width: 2, dash: 0 },
+      }),
+    ]),
+    page('마무리', { kind: 'gradient', from: '#0b1021', to: '#2a3568', angle: 150 }, [
+      createText('감사합니다', { x: 160, y: 420, width: 1200, height: 180 }, {
+        fontFamily: 'Noto Sans KR',
+        fontSize: 128,
+        fontWeight: 700,
+        letterSpacing: -4,
+        color: '#ffffff',
+      }),
+      createText('질문은 언제든 편하게 — product@studio.kr', { x: 160, y: 640, width: 1200, height: 70 }, {
+        fontFamily: 'Inter',
+        fontSize: 36,
+        fontWeight: 400,
+        color: '#a5b4fc',
+      }),
+      createIcon('반짝임', iconPath('star'), { x: 1560, y: 760, width: 140, height: 140 }, { color: '#2a3568' }),
+    ]),
+  ]);
+
+/** A lighter, type-led deck for talks and lecture notes. */
+const editorialDeck = (): Design =>
+  design('에디토리얼 프레젠테이션', 1920, 1080, ['#1b1b1f', '#8a7a5c', '#d8cdb4', '#fdfaf4', '#ffffff'], [
+    page('표지', { kind: 'solid', color: '#fdfaf4' }, [
+      createText('DESIGN NOTES', { x: 180, y: 200, width: 700, height: 60 }, {
+        fontFamily: 'Inter',
+        fontSize: 28,
+        fontWeight: 700,
+        letterSpacing: 10,
+        color: '#8a7a5c',
+        uppercase: true,
+      }),
+      createText('좋은 인터페이스는\n설명을 줄인다', { x: 180, y: 320, width: 1400, height: 400 }, {
+        fontFamily: 'Playfair Display',
+        fontSize: 140,
+        fontWeight: 700,
+        lineHeight: 1.1,
+        letterSpacing: -2,
+        color: '#1b1b1f',
+      }),
+      createShape('line', { x: 180, y: 800, width: 400, height: 3 }, {
+        stroke: { color: '#1b1b1f', width: 3, dash: 0 },
+      }),
+      createText('2026년 3월 · 디자인 세미나', { x: 180, y: 840, width: 800, height: 60 }, {
+        fontFamily: 'Gowun Batang',
+        fontSize: 34,
+        fontWeight: 400,
+        color: '#6b6b73',
+      }),
+    ]),
+    page('목차', { kind: 'solid', color: '#ffffff' }, [
+      createText('차례', { x: 180, y: 160, width: 600, height: 120 }, {
+        fontFamily: 'Playfair Display',
+        fontSize: 86,
+        fontWeight: 700,
+        color: '#1b1b1f',
+      }),
+      createText(
+        '하나 — 읽히는 글자\n둘 — 비어 있는 자리\n셋 — 움직임의 예의\n넷 — 덜어내기',
+        { x: 180, y: 360, width: 1400, height: 480 },
+        { fontFamily: 'Gowun Batang', fontSize: 58, fontWeight: 400, lineHeight: 1.95, color: '#2f2f36' },
+      ),
+    ]),
+    page('섹션', { kind: 'solid', color: '#1b1b1f' }, [
+      createText('하나', { x: 180, y: 400, width: 700, height: 160 }, {
+        fontFamily: 'Gowun Batang',
+        fontSize: 54,
+        fontWeight: 400,
+        letterSpacing: 8,
+        color: '#8a7a5c',
+      }),
+      createText('읽히는 글자', { x: 180, y: 520, width: 1300, height: 200 }, {
+        fontFamily: 'Playfair Display',
+        fontSize: 130,
+        fontWeight: 700,
+        color: '#fdfaf4',
+      }),
+    ]),
+    page('본문', { kind: 'solid', color: '#fdfaf4' }, [
+      createText('글자는 장식이 아니라 구조다', { x: 180, y: 160, width: 1300, height: 120 }, {
+        fontFamily: 'Playfair Display',
+        fontSize: 76,
+        fontWeight: 700,
+        color: '#1b1b1f',
+      }),
+      createText(
+        '크기를 네 단계로 줄이면 위계가 분명해진다. 같은 역할의 글자가 두 가지 크기로 나타나는 순간, 읽는 사람은 어느 쪽이 중요한지 다시 묻게 된다.\n\n줄 길이는 45자에서 75자 사이로. 그보다 길면 다음 줄을 찾느라 눈이 되돌아가고, 짧으면 호흡이 끊긴다.',
+        { x: 180, y: 340, width: 940, height: 520 },
+        { fontFamily: 'Gowun Batang', fontSize: 38, fontWeight: 400, lineHeight: 1.85, color: '#2f2f36' },
+      ),
+      createShape('rectangle', { x: 1240, y: 340, width: 500, height: 520 }, {
+        fill: { kind: 'solid', color: '#d8cdb4' },
+        radius: 8,
+      }),
+      createText('이미지 자리', { x: 1240, y: 580, width: 500, height: 60 }, {
+        fontFamily: 'Noto Sans KR',
+        fontSize: 30,
+        fontWeight: 500,
+        align: 'center',
+        color: '#7a7059',
+      }),
+    ]),
+    page('인용', { kind: 'solid', color: '#ffffff' }, [
+      createText('“', { x: 180, y: 180, width: 300, height: 300 }, {
+        fontFamily: 'Playfair Display',
+        fontSize: 300,
+        fontWeight: 700,
+        color: '#d8cdb4',
+      }),
+      createText('덜어낼 것이 없을 때\n비로소 완성된다', { x: 200, y: 420, width: 1500, height: 320 }, {
+        fontFamily: 'Playfair Display',
+        fontSize: 110,
+        fontWeight: 400,
+        lineHeight: 1.25,
+        color: '#1b1b1f',
+      }),
+      createText('생텍쥐페리', { x: 200, y: 800, width: 600, height: 60 }, {
+        fontFamily: 'Gowun Batang',
+        fontSize: 34,
+        fontWeight: 400,
+        letterSpacing: 4,
+        color: '#8a7a5c',
+      }),
+    ]),
+    page('마무리', { kind: 'solid', color: '#1b1b1f' }, [
+      createText('고맙습니다', { x: 180, y: 440, width: 1200, height: 200 }, {
+        fontFamily: 'Playfair Display',
+        fontSize: 140,
+        fontWeight: 700,
+        color: '#fdfaf4',
+      }),
+      createShape('line', { x: 180, y: 700, width: 300, height: 3 }, {
+        stroke: { color: '#8a7a5c', width: 3, dash: 0 },
+      }),
+    ]),
   ]);
 
 const businessCard = (): Design =>
@@ -519,7 +761,8 @@ export const TEMPLATES: readonly TemplateDefinition[] = [
   { id: 'story-promo', label: '스토리 홍보', category: '소셜', build: storyPromo },
   { id: 'yt-thumbnail', label: '유튜브 썸네일', category: '마케팅', build: thumbnail },
   { id: 'webinar-banner', label: '웨비나 배너', category: '마케팅', build: webinarBanner },
-  { id: 'deck', label: '프레젠테이션', category: '프레젠테이션', build: deck },
+  { id: 'deck', label: '프레젠테이션 6장', category: '프레젠테이션', build: deck },
+  { id: 'editorial-deck', label: '에디토리얼 덱 6장', category: '프레젠테이션', build: editorialDeck },
   { id: 'event-poster', label: '이벤트 포스터', category: '인쇄', build: eventPoster },
   { id: 'business-card', label: '명함', category: '인쇄', build: businessCard },
   { id: 'cafe-menu', label: '카페 메뉴', category: '인쇄', build: menu },

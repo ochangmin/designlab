@@ -857,6 +857,31 @@ h3 {
   grid-template-columns: repeat(3, 1fr);
 }
 
+.panel-grid--graphics {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.graphic-tile {
+  display: block;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface-sunken);
+  cursor: pointer;
+  overflow: hidden;
+  line-height: 0;
+}
+
+.graphic-tile:hover {
+  border-color: var(--accent);
+}
+
+.graphic-tile img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
 .shape-tile,
 .icon-tile {
   aspect-ratio: 1;

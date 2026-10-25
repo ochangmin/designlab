@@ -302,10 +302,20 @@ export class EditorStore {
 
   // --------------------------------------------------------------- elements
 
-  addElements = (elements: readonly DesignElement[]): void => {
-    this.#commit(addElements(this.#state.design, this.#state.activePageId, elements), {
-      selection: elements.map((element) => element.id),
-    });
+  /**
+   * Add elements as one undo step. `sendToBack` places them behind everything
+   * on the page, which is what a background graphic means; doing it inside the
+   * same commit keeps "insert a background" a single action to undo.
+   */
+  addElements = (
+    elements: readonly DesignElement[],
+    options: { readonly sendToBack?: boolean } = {},
+  ): void => {
+    const { design, activePageId } = this.#state;
+    const ids = elements.map((element) => element.id);
+    const added = addElements(design, activePageId, elements);
+    const placed = options.sendToBack === true ? reorder(added, activePageId, ids, 'back') : added;
+    this.#commit(placed, { selection: ids });
   };
 
   /** Swap one element for another in place, e.g. a photo dropped into a frame. */
