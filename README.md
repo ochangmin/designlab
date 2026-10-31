@@ -1,7 +1,11 @@
-# DesignLab
+# BIPKO Studio
 
-브라우저에서 동작하는 비주얼 디자인 플랫폼입니다. 다중 페이지 문서, 벡터 요소 모델,
+브라우저에서 동작하는 디자인·레이아웃 보드입니다. 다중 페이지 문서, 벡터 요소 모델,
 템플릿, 그리고 화면과 동일한 결과를 내는 내보내기를 갖추고 있습니다.
+
+[BIPKO](https://bipko.ai/)가 아이디어에서 영상까지를 잇는다면, Studio는 그 과정에서
+계속 필요한 정지 이미지 — 썸네일, 포스터, 슬라이드 — 를 만드는 자리입니다. 지금은
+독립 제품이고, 나중에 BIPKO로 흡수될 수 있게 만들어져 있습니다: [BRAND.md](BRAND.md).
 
 **데모: <https://ochangmin.github.io/designlab/>** — `main`에 푸시하면
 [GitHub Actions](.github/workflows/pages.yml)가 타입 검사·테스트·빌드를 거쳐 배포합니다.
@@ -86,10 +90,11 @@ React와 ReactDOM 둘뿐이며, 상태 관리·캔버스·아이콘 라이브러
 의존성은 안쪽으로만 흐릅니다. 자세한 내용은 [ARCHITECTURE.md](ARCHITECTURE.md)를 보세요.
 
 ```
-src/domain/       순수 모델 — 문서, 기하, 변형, 줄바꿈, 파싱, 템플릿
-src/application/  워크플로 — 에디터 스토어, 저장소, 자산, 내보내기 렌더러
+src/domain/       순수 모델 — 문서, 기하, 변형, 줄바꿈, 파싱, 템플릿, 브랜드
+src/application/  워크플로 — 에디터 스토어, 저장소, 인증, 자산, 내보내기 렌더러
 src/ui/           React 어댑터 — 대시보드, 에디터 셸, 패널, 캔버스
-tests/            도메인 단위 테스트 (vitest)
+supabase/         스키마와 RLS 정책 (migrations)
+tests/            도메인·경계 단위 테스트 (vitest)
 ```
 
 ## 배포
@@ -149,6 +154,9 @@ npx supabase db push
 VITE_SUPABASE_URL=https://<프로젝트>.supabase.co
 VITE_SUPABASE_ANON_KEY=<anon public 키>
 ```
+
+브랜드를 BIPKO 하우스 아이덴티티로 바꾸려면 `VITE_BRAND=bipko`를 더합니다. 기본값은
+독립 브랜드(`studio`)이고, 자세한 내용은 [BRAND.md](BRAND.md)에 있습니다.
 
 GitHub Pages 배포에도 넣으려면 저장소 Settings → Secrets and variables →
 Actions에 같은 이름으로 등록하고, `.github/workflows/pages.yml`의 빌드 단계에

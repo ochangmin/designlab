@@ -6,7 +6,7 @@
  * because both answer "what am I opening?".
  */
 
-import { useEffect, useMemo, useRef, useState, type ReactElement } from 'react';
+import { Fragment, useEffect, useMemo, useRef, useState, type ReactElement } from 'react';
 
 import type { ProjectSummary } from '../application/projectStore.js';
 import { AccountMenu } from './auth/AccountMenu.js';
@@ -22,7 +22,9 @@ import { FONTS, SIZE_PRESETS } from '../domain/presets.js';
 import { createBlankDesign, TEMPLATES } from '../domain/templates.js';
 import type { Design } from '../domain/document.js';
 import type { MeasureText } from '../domain/textLayout.js';
+import { BRAND } from './brand.js';
 import { cssVars } from './cssVars.js';
+import { Wordmark } from './Wordmark.js';
 import { PagePreview } from './PagePreview.js';
 
 const relativeTime = (timestamp: number): string => {
@@ -151,11 +153,11 @@ export const Dashboard = ({ measure, onOpen, onOpenAuth, onOpenMembers }: Dashbo
     <div className="dashboard">
       <header className="topnav">
         <div className="brand">
-          <span className="brand__mark" aria-hidden="true" />
+          <Wordmark withName={false} />
           <div>
             {/* The page's one <h1> belongs to the hero, not the wordmark. */}
-            <span className="brand__name">DesignLab</span>
-            <p>브라우저에서 바로 만드는 디자인 플랫폼</p>
+            <span className="brand__name">{BRAND.wordmark}</span>
+            <p>{BRAND.description}</p>
           </div>
         </div>
         <div className="topnav__actions">
@@ -224,9 +226,13 @@ export const Dashboard = ({ measure, onOpen, onOpenAuth, onOpenMembers }: Dashbo
         </div>
         <div className="hero__content">
           <p className="hero__eyebrow">설치 없이, 브라우저에서</p>
-          <h1>생각한 그대로를
-            <br />
-            바로 디자인으로
+          <h1>
+            {BRAND.tagline.map((line, index) => (
+              <Fragment key={line}>
+                {index > 0 && <br />}
+                {line}
+              </Fragment>
+            ))}
           </h1>
           <p className="hero__lead">
             템플릿에서 시작하거나 빈 캔버스를 열어 보세요. 작업은 자동으로 저장되고, 화면에 보이는

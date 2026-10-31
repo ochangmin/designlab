@@ -1,25 +1,33 @@
-/* DesignLab — application shell styling.
-   Tokens first, then the dashboard, the editor chrome and the canvas surface. */
+/* BIPKO Studio — application shell styling.
+   Tokens first, then the dashboard, the editor chrome and the canvas surface.
+
+   Every brand-bearing token below is written again by `ui/brand.ts` before the
+   first render; `domain/brand.ts` is authoritative and these are the values a
+   frame before the script runs. Structural tokens — the shadows, the rail and
+   panel widths — belong to this file. */
 
 :root {
-  --ink: #15161c;
-  --ink-soft: #5c5f70;
-  --ink-faint: #8e92a4;
-  --line: #e3e4ec;
-  --line-strong: #cfd1de;
+  --ink: #171431;
+  --ink-soft: #6b687b;
+  --ink-faint: #9a97a8;
+  --line: #e6e4ef;
+  --line-strong: #cfccdd;
   --surface: #ffffff;
-  --surface-sunken: #f6f7fb;
+  --surface-sunken: #f6f5fa;
   --surface-raised: #ffffff;
-  --canvas: #e7e8f0;
-  --accent: #6d5efc;
+  --canvas: #ebe9f3;
+  --accent: #fa168b;
   --accent-ink: #ffffff;
-  --accent-soft: #eeecff;
+  --accent-soft: #ffe9f4;
+  --brand-deep: #100b2b;
+  --brand-tile: linear-gradient(140deg, #fa168b, #7b1d6b 62%, #100b2b);
+  --brand-font: Inter, 'Noto Sans KR', 'Noto Sans JP', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
   --danger: #dc2626;
   --radius: 10px;
   --radius-lg: 16px;
-  --shadow-sm: 0 1px 2px rgba(21, 22, 28, 0.08);
-  --shadow-md: 0 8px 24px rgba(21, 22, 28, 0.12);
-  --shadow-lg: 0 24px 64px rgba(21, 22, 28, 0.22);
+  --shadow-sm: 0 1px 2px rgba(23, 20, 49, 0.08);
+  --shadow-md: 0 8px 24px rgba(23, 20, 49, 0.12);
+  --shadow-lg: 0 24px 64px rgba(23, 20, 49, 0.22);
   --rail-width: 76px;
   --panel-width: 300px;
   --inspector-width: 304px;
@@ -40,7 +48,7 @@ body,
 body {
   background: var(--surface-sunken);
   color: var(--ink);
-  font-family: 'Inter', 'Noto Sans KR', system-ui, -apple-system, sans-serif;
+  font-family: var(--brand-font);
   font-size: 14px;
   line-height: 1.45;
   -webkit-font-smoothing: antialiased;
@@ -88,8 +96,8 @@ h3 {
 }
 
 .button--primary:hover:not(:disabled) {
-  background: #5b4cf0;
-  border-color: #5b4cf0;
+  background: color-mix(in srgb, var(--accent) 86%, var(--brand-deep));
+  border-color: color-mix(in srgb, var(--accent) 86%, var(--brand-deep));
 }
 
 .button--ghost {
@@ -163,9 +171,12 @@ h3 {
   overflow: hidden;
   margin-bottom: 44px;
   padding: 64px 56px 56px;
-  border: 1px solid var(--line);
+  border: 1px solid transparent;
   border-radius: 28px;
-  background: var(--surface);
+  /* The house ground: bipko.ai sits its hero on this indigo with the pink
+     above it, and the two surfaces should read as one product. */
+  background: var(--brand-deep);
+  color: #ffffff;
   isolation: isolate;
 }
 
@@ -180,32 +191,34 @@ h3 {
   position: absolute;
   display: block;
   border-radius: 50%;
-  filter: blur(68px);
-  opacity: 0.55;
+  filter: blur(62px);
+  /* A glow on the dark ground, not a wash over it: the headline sits on the
+     left and has to stay on the indigo. */
+  opacity: 0.5;
 }
 
 .hero__blob--a {
-  top: 2%;
-  left: 54%;
-  width: 36%;
+  top: 4%;
+  left: 58%;
+  width: 30%;
   aspect-ratio: 1;
-  background: radial-gradient(circle, #8b7bff, transparent 70%);
+  background: radial-gradient(circle, var(--accent), transparent 70%);
 }
 
 .hero__blob--b {
-  top: 34%;
+  top: 30%;
   left: 72%;
-  width: 28%;
+  width: 24%;
   aspect-ratio: 1;
-  background: radial-gradient(circle, #ff8ccf, transparent 70%);
+  background: radial-gradient(circle, color-mix(in srgb, var(--accent) 55%, var(--brand-deep)), transparent 70%);
 }
 
 .hero__blob--c {
-  top: 48%;
-  left: 40%;
-  width: 24%;
+  top: 54%;
+  left: 60%;
+  width: 18%;
   aspect-ratio: 1;
-  background: radial-gradient(circle, #ffd27a, transparent 70%);
+  background: radial-gradient(circle, color-mix(in srgb, var(--accent) 24%, #ffffff), transparent 70%);
 }
 
 .hero__content {
@@ -224,6 +237,7 @@ h3 {
 
 .hero h1 {
   margin: 0 0 18px;
+  color: #ffffff;
   font-size: clamp(34px, 4.6vw, 54px);
   line-height: 1.1;
   letter-spacing: -0.03em;
@@ -232,7 +246,7 @@ h3 {
 .hero__lead {
   margin: 0 0 28px;
   max-width: 50ch;
-  color: var(--ink-soft);
+  color: rgba(255, 255, 255, 0.72);
   font-size: 15px;
   line-height: 1.65;
 }
@@ -256,14 +270,14 @@ h3 {
   gap: 32px;
   margin: 0;
   padding-top: 24px;
-  border-top: 1px solid var(--line);
+  border-top: 1px solid rgba(255, 255, 255, 0.16);
 }
 
 .hero__stat dt {
   font-size: 11px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--ink-faint);
+  color: rgba(255, 255, 255, 0.55);
 }
 
 .hero__stat dd {
@@ -272,6 +286,19 @@ h3 {
   font-weight: 700;
   letter-spacing: -0.02em;
   font-variant-numeric: tabular-nums;
+  color: #ffffff;
+}
+
+/* The secondary call to action has to survive on the dark ground. */
+.hero__actions .button:not(.button--primary) {
+  background: transparent;
+  border-color: rgba(255, 255, 255, 0.3);
+  color: #ffffff;
+}
+
+.hero__actions .button:not(.button--primary):hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.5);
 }
 
 .brand {
@@ -295,14 +322,23 @@ h3 {
 
 .brand__mark {
   position: relative;
+  display: grid;
+  place-items: center;
   width: 40px;
   height: 40px;
   border-radius: 12px;
-  background: linear-gradient(135deg, #6d5efc, #f472b6 70%, #facc15);
+  background: var(--brand-tile);
   box-shadow: var(--shadow-sm);
   flex: none;
   overflow: hidden;
   isolation: isolate;
+}
+
+/* The glyph sits above the sheen below it. */
+.brand__mark svg {
+  position: relative;
+  z-index: 1;
+  display: block;
 }
 
 /* A second gradient turns slowly behind the first, so the mark reads as lit
@@ -326,7 +362,7 @@ h3 {
   padding: 10px 14px;
   border-radius: var(--radius);
   background: var(--accent-soft);
-  color: #3b32a8;
+  color: color-mix(in srgb, var(--accent) 72%, var(--brand-deep));
   font-size: 13px;
 }
 
@@ -425,7 +461,7 @@ h3 {
 .size-card__shape {
   width: 100%;
   border-radius: 6px;
-  background: linear-gradient(135deg, #dcdaff, #f4f4ff);
+  background: linear-gradient(135deg, var(--accent-soft), var(--surface));
   border: 1px solid var(--line-strong);
   margin-bottom: 8px;
 }
@@ -1286,11 +1322,11 @@ h3 {
 }
 
 .guide--x {
-  border-left: 1px solid #ff3d8b;
+  border-left: 1px solid var(--accent);
 }
 
 .guide--y {
-  border-top: 1px solid #ff3d8b;
+  border-top: 1px solid var(--accent);
 }
 
 .marquee {

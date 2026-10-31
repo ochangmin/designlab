@@ -20,6 +20,7 @@ import {
 } from '../../domain/account.js';
 import { describeError, type StudioError } from '../../domain/errors.js';
 import { useAccountState } from '../authContext.js';
+import { Wordmark } from '../Wordmark.js';
 import '../account.css';
 
 const formatDate = (timestamp: number): string =>
@@ -79,7 +80,7 @@ export const MembersScreen = ({ onExit }: MembersScreenProps): ReactElement => {
     <div className="dashboard">
       <header className="topnav">
         <div className="brand">
-          <span className="brand__mark" aria-hidden="true" />
+          <Wordmark withName={false} />
           <div>
             <span className="brand__name">회원 관리</span>
             <p>가입 경로와 권한, 계정 상태를 확인하고 변경합니다</p>

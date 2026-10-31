@@ -11,6 +11,11 @@
 interface ImportMetaEnv {
   readonly VITE_SUPABASE_URL?: string;
   readonly VITE_SUPABASE_ANON_KEY?: string;
+  /**
+   * Which brand this build wears: `studio` (default) or `bipko`. Setting it
+   * to `bipko` is the merge switch — see BRAND.md.
+   */
+  readonly VITE_BRAND?: string;
 }
 
 interface ImportMeta {

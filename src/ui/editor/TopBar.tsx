@@ -2,6 +2,7 @@
 
 import { useState, type ReactElement } from 'react';
 
+import { Wordmark } from '../Wordmark.js';
 import { useEditorState, useStore } from '../storeContext.js';
 import { ExportDialog } from './ExportDialog.js';
 
@@ -28,7 +29,7 @@ export const TopBar = ({ onExit }: TopBarProps): ReactElement => {
         <button type="button" className="button button--quiet" onClick={onExit} title="홈으로">
           ‹ 홈
         </button>
-        <span className="brand__mark brand__mark--small" aria-hidden="true" />
+        <Wordmark size={24} withName={false} />
         <input
           className="topbar__name"
           value={state.design.name}
