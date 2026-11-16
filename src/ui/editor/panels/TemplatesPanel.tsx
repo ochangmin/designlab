@@ -1,24 +1,26 @@
 import { useMemo, useState, type ReactElement } from 'react';
 
 import { TEMPLATES, type TemplateDefinition } from '../../../domain/templates.js';
-import { PagePreview } from '../../PagePreview.js';
+import { TemplateThumb } from '../../TemplateThumb.js';
 import { useEditorState, useMeasure, useStore } from '../../storeContext.js';
 
 const CATEGORIES = ['전체', '소셜', '프레젠테이션', '인쇄', '마케팅'] as const;
+
+/** How many tiles arrive at once; the catalogue runs to several hundred. */
+const PAGE = 18;
 
 export const TemplatesPanel = (): ReactElement => {
   const store = useStore();
   const measure = useMeasure();
   const { design } = useEditorState();
   const [category, setCategory] = useState<(typeof CATEGORIES)[number]>('전체');
+  const [shown, setShown] = useState(PAGE);
 
-  const built = useMemo(
-    () => TEMPLATES.map((template) => ({ template, preview: template.build() })),
-    [],
-  );
-
-  const visible = built.filter(
-    ({ template }) => category === '전체' || template.category === category,
+  // Filtering is on the definitions, not on built documents: a template is
+  // only built when its tile is about to be seen.
+  const visible = useMemo(
+    () => (category === '전체' ? TEMPLATES : TEMPLATES.filter((template) => template.category === category)),
+    [category],
   );
 
   const apply = (template: TemplateDefinition): void => {
@@ -40,23 +42,29 @@ export const TemplatesPanel = (): ReactElement => {
             key={name}
             type="button"
             className={`chip${category === name ? ' is-active' : ''}`}
-            onClick={() => setCategory(name)}
+            onClick={() => {
+              setCategory(name);
+              setShown(PAGE);
+            }}
           >
             {name}
           </button>
         ))}
       </div>
+      <p className="panel-note">{visible.length}개</p>
       <div className="panel-grid panel-grid--templates">
-        {visible.map(({ template, preview }) => {
-          const firstPage = preview.pages[0];
-          return (
-            <button key={template.id} type="button" className="template-tile" onClick={() => apply(template)}>
-              {firstPage && <PagePreview design={preview} page={firstPage} measure={measure} width={128} />}
-              <span>{template.label}</span>
-            </button>
-          );
-        })}
+        {visible.slice(0, shown).map((template) => (
+          <button key={template.id} type="button" className="template-tile" onClick={() => apply(template)}>
+            <TemplateThumb template={template} measure={measure} maxWidth={128} maxHeight={128} />
+            <span>{template.label}</span>
+          </button>
+        ))}
       </div>
+      {shown < visible.length && (
+        <button type="button" className="button" onClick={() => setShown((count) => count + PAGE)}>
+          더 보기 ({visible.length - shown}개 남음)
+        </button>
+      )}
       <p className="panel-note">
         템플릿을 적용하면 현재 페이지 구성이 교체됩니다. 문서 크기도 템플릿 크기로 바뀝니다.
       </p>

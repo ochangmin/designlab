@@ -19,13 +19,13 @@ import { openPptxFile } from '../application/format/openPptx.js';
 import { parseDesignJson } from '../domain/parse.js';
 import type { ImportOutcome } from '../domain/pptxImport.js';
 import { FONTS, SIZE_PRESETS } from '../domain/presets.js';
-import { createBlankDesign, TEMPLATES } from '../domain/templates.js';
+import { createBlankDesign, TEMPLATES, type TemplateCategory } from '../domain/templates.js';
+import { TemplateThumb } from './TemplateThumb.js';
 import type { Design } from '../domain/document.js';
 import type { MeasureText } from '../domain/textLayout.js';
 import { BRAND } from './brand.js';
 import { cssVars } from './cssVars.js';
 import { Wordmark } from './Wordmark.js';
-import { PagePreview } from './PagePreview.js';
 
 const relativeTime = (timestamp: number): string => {
   const minutes = Math.round((Date.now() - timestamp) / 60_000);
@@ -53,6 +53,13 @@ interface Listing {
   readonly loading: boolean;
 }
 
+type TemplateFilter = TemplateCategory | '전체';
+
+const TEMPLATE_FILTERS: readonly TemplateFilter[] = ['전체', '소셜', '마케팅', '프레젠테이션', '인쇄'];
+
+/** How many template cards arrive at once. */
+const TEMPLATE_PAGE = 24;
+
 export interface DashboardProps {
   readonly measure: MeasureText;
   readonly onOpen: (design: Design) => void;
@@ -65,6 +72,8 @@ export const Dashboard = ({ measure, onOpen, onOpenAuth, onOpenMembers }: Dashbo
   const [refreshToken, setRefreshToken] = useState(0);
   const [message, setMessage] = useState<string | null>(null);
   const [pendingImport, setPendingImport] = useState<ImportOutcome | null>(null);
+  const [templateFilter, setTemplateFilter] = useState<TemplateFilter>('전체');
+  const [shown, setShown] = useState(TEMPLATE_PAGE);
   const [customWidth, setCustomWidth] = useState(1080);
   const [customHeight, setCustomHeight] = useState(1080);
   const templatesRef = useRef<HTMLElement | null>(null);
@@ -91,7 +100,12 @@ export const Dashboard = ({ measure, onOpen, onOpenAuth, onOpenMembers }: Dashbo
   const projects = listing.projects;
   const storageNotice = listing.notice;
 
-  const templatePreviews = useMemo(() => TEMPLATES.map((template) => ({ template, design: template.build() })), []);
+  // Only the chosen category, and only a page of it at a time: the catalogue
+  // is large enough that rendering all of it would cost a visible pause.
+  const matchingTemplates = useMemo(
+    () => (templateFilter === '전체' ? TEMPLATES : TEMPLATES.filter((t) => t.category === templateFilter)),
+    [templateFilter],
+  );
 
   const openProject = async (id: string): Promise<void> => {
     const result = await projectStore.load(id);
@@ -337,40 +351,56 @@ export const Dashboard = ({ measure, onOpen, onOpenAuth, onOpenMembers }: Dashbo
       <section className="dashboard__section" ref={templatesRef}>
         <div className="dashboard__head">
           <h2>템플릿</h2>
-          <span className="dashboard__count">{TEMPLATES.length}개</span>
+          <span className="dashboard__count">{matchingTemplates.length}개</span>
+        </div>
+        <div className="chips">
+          {TEMPLATE_FILTERS.map((name) => (
+            <button
+              key={name}
+              type="button"
+              className={`chip${templateFilter === name ? ' is-active' : ''}`}
+              onClick={() => {
+                setTemplateFilter(name);
+                setShown(TEMPLATE_PAGE);
+              }}
+            >
+              {name}
+            </button>
+          ))}
         </div>
         <div className="template-grid">
-          {templatePreviews.map(({ template, design }, index) => {
-            const firstPage = design.pages[0];
-            return (
-              <button
-                key={template.id}
-                type="button"
-                className="template-card stagger-item"
-                style={cssVars({ '--i': index })}
-                onClick={() => onOpen(template.build())}
-              >
-                <div className="template-card__canvas">
-                  {firstPage && (
-                    <PagePreview
-                      design={design}
-                      page={firstPage}
-                      measure={measure}
-                      // Fit inside the card: portrait documents are limited by
-                      // height, landscape ones by width.
-                      width={Math.min(240, (196 * design.width) / design.height)}
-                    />
-                  )}
-                  <span className="template-card__hint">이 템플릿으로 시작</span>
-                </div>
-                <div className="template-card__meta">
-                  <strong>{template.label}</strong>
-                  <small>{template.category}</small>
-                </div>
-              </button>
-            );
-          })}
+          {matchingTemplates.slice(0, shown).map((template, index) => (
+            <button
+              key={template.id}
+              type="button"
+              className="template-card stagger-item"
+              // The stagger is for the cards that just arrived, not for the
+              // hundreds already on screen.
+              style={cssVars({ '--i': index % TEMPLATE_PAGE })}
+              onClick={() => onOpen(template.build())}
+            >
+              <div className="template-card__canvas">
+                <TemplateThumb template={template} measure={measure} maxWidth={240} maxHeight={196} />
+                <span className="template-card__hint">이 템플릿으로 시작</span>
+              </div>
+              <div className="template-card__meta">
+                <strong>{template.label}</strong>
+                <small>{template.category}</small>
+              </div>
+            </button>
+          ))}
         </div>
+        {shown < matchingTemplates.length && (
+          <div className="more-row">
+            <button
+              type="button"
+              className="button"
+              onClick={() => setShown((count) => count + TEMPLATE_PAGE)}
+            >
+              더 보기 ({matchingTemplates.length - shown}개 남음)
+            </button>
+          </div>
+        )}
       </section>
 
       <section className="dashboard__section">

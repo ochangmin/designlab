@@ -9,6 +9,7 @@
 import { createIcon, createShape, createText } from './elements.js';
 import type { Design } from './document.js';
 import { design, iconPath, page, WHITE, type TemplateDefinition } from './templateBuilders.js';
+import { COMPOSED_TEMPLATES } from './templates/composed.js';
 import { MARKETING_TEMPLATES } from './templates/marketing.js';
 import { PRESENTATION_TEMPLATES } from './templates/presentation.js';
 import { PRINT_TEMPLATES } from './templates/print.js';
@@ -738,6 +739,7 @@ export const TEMPLATES: readonly TemplateDefinition[] = [
   ...MARKETING_TEMPLATES,
   ...PRESENTATION_TEMPLATES,
   ...PRINT_TEMPLATES,
+  ...COMPOSED_TEMPLATES,
 ];
 
 export const findTemplate = (id: string): TemplateDefinition | null =>

@@ -531,6 +531,25 @@ h3 {
   box-shadow: var(--shadow-md);
 }
 
+/* Holds the card's space before the document behind it has been built. */
+.template-thumb {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+
+.template-thumb--pending {
+  background: linear-gradient(120deg, var(--surface-sunken), var(--line) 50%, var(--surface-sunken));
+}
+
+.more-row {
+  display: flex;
+  justify-content: center;
+  margin-top: 18px;
+}
+
 .template-card__canvas {
   position: relative;
   display: flex;
